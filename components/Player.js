@@ -80,9 +80,12 @@ function Player(props) {
 
         if (listening){
             model.listen(result=>{
+                const max = argMax(Object.values(result.scores));
+                console.log(max, result.scores[max]);
+                
                 const action = labels[argMax(Object.values(result.scores))];
                 setAction(action);
-            }, {includeSpectrogram:true, probabilityThreshold:0.8})
+            }, {includeSpectrogram:false, probabilityThreshold:0.99})
         }else{
             try{
                 model.stopListening();
@@ -249,7 +252,7 @@ function Player(props) {
 
     const renderStory = ()=>{
         return <div className={styles.startcontainer}>
-            {sources.length > 0 && !node && <button className="startbutton" onClick={startStory}>Start!</button>}
+            {sources.length > 0 && !node && <button className={styles.startbutton} onClick={startStory}>Start!</button>}
             {renderCurrentNode()}       
         </div>
     }

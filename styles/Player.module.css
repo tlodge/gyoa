@@ -20,7 +20,7 @@
     z-index: 2
 }
 
-input .fileupload {
+.fileupload {
     display: none;
 }
 
