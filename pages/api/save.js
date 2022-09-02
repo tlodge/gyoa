@@ -3,5 +3,5 @@ export default async function handler(req, res) {
     const gdata = req.query;
     console.log(pdata);
     console.log(gdata);
-
+    res.status(200).json({ hello: 'person' })
 }
