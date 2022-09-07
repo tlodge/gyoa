@@ -14,7 +14,7 @@ module.exports = {
 
     return config;
   },
-  async headers() {
+  /*async headers() {
     return [
       {
         // matching all API routes
@@ -27,5 +27,5 @@ module.exports = {
         ]
       }
     ]
-  }
+  }*/
 };
