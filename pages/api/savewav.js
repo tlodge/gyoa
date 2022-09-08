@@ -1,11 +1,10 @@
 import admin from '../../lib/firebase';
-const firebase = admin.firestore();
-
+const storage = admin.storage();
 
 export const config = { api: { bodyParser: { sizeLimit: '4.5mb' } } }
+const mybucket = storage.bucket(process.env.BUCKETID);
 
 const allowCors = fn => async (req, res) => {
-    console.log("in allow cors!!");
     res.setHeader('Access-Control-Allow-Credentials', true)
     res.setHeader('Access-Control-Allow-Origin', '*')
     // another common pattern
@@ -26,23 +25,12 @@ const allowCors = fn => async (req, res) => {
   const handler = async (req, res) => {
     
     if (req.method === "POST"){
-     
-        const {id, script} = req.body;
-        if (id){
-            const scriptRef = firebase.collection("scripts").doc(id);
-            await scriptRef.set({script, ts:Date.now()});
-            console.log("saved it!");
-        }else{
-            console.log("no id!");
-        }
-        //const idRef = firebase.collection("ids").doc(id);
-        //await idRef.set({ts:Date.now()});
+        
+        const {folder, id, data} = req.body;
+        mybucket.file(`${folder}/${id}`).save(data);
     }
     res.end()
   }
   
-
-
-
 export default allowCors(handler)
   

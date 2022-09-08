@@ -6,6 +6,8 @@ import { MdMic} from "react-icons/md";
 
 import {  FaBookReader} from "react-icons/fa";
 import AudioPlayer from './AudioPlayer';
+import request from 'superagent';
+
 /*
  * commands that are recognised: "zero" to "nine", "up", "down", "left", "right", "go", "stop", "yes", "no"
  */
@@ -28,6 +30,7 @@ function Player(props) {
     const [tracks, setTracks] = useState([]);
     const [listening, setListening] = useState(false);
        
+    const [scriptName, setScriptName] = useState("");
 
     const [startpressed, setStartPressed] = useState(false);
 
@@ -53,20 +56,8 @@ function Player(props) {
                     [i]:true,
                 }
         },{});
-
-        console.log("in prgrsss is now", inProgress);
     },[tracks]);
    
-
-    useEffect(()=>{
-        console.log("am playiomg", playing);
-    },[playing]);
-
-    useEffect(()=>{
-        if (model){
-            setListening(true);
-        }
-    },[model]);
 
     const argMax = (arr)=>{
         return arr.map((x, i) => [x, i]).reduce((r, a) => (a[0] > r[0] ? a : r))[1];
@@ -74,18 +65,22 @@ function Player(props) {
 
 
     useEffect (()=>{
+
         if (!model){
             return;
         }
 
         if (listening){
-            model.listen(result=>{
-                const max = argMax(Object.values(result.scores));
-                console.log(max, result.scores[max]);
-                
-                const action = labels[argMax(Object.values(result.scores))];
-                setAction(action);
-            }, {includeSpectrogram:false, probabilityThreshold:0.99})
+            try{
+                model.listen(result=>{
+                    const max = argMax(Object.values(result.scores));
+                    
+                    const action = labels[argMax(Object.values(result.scores))];
+                    setAction(action);
+                }, {includeSpectrogram:true, probabilityThreshold:0.99})
+            }catch(err){
+
+            }
         }else{
             try{
                 model.stopListening();
@@ -93,7 +88,7 @@ function Player(props) {
                 console.log("error stopping listning!", err);
             }
         }
-    }, [listening]);
+    }, [listening, model]);
 
     const splitkey = (key, value)=>{
         return key.split(/(\s+)/).reduce((acc, item)=>{
@@ -128,25 +123,30 @@ function Player(props) {
                             setAction();
                             setListening(false);
                             setPlaying(true);
-                        },200);
+                        },500);
                     }
                 }
             }
         }        
     },[action]);
 
-    const changeHandler = (event) => {
+    const fileChangeHandler = (event) => {
         handleSubmission(event.target.files[0]);
 	};
 
+    const scriptChangeHandler = (event) => {
+        console.log(event.target.value);
+        setScriptName(event.target.value);
+        //handleSubmission(event.target.files[0]);
+	};
+
     const startStory = ()=>{
-        console.log("start pressed!!");
+       
         if (listening){
             setListening(false);
         }
         
         let _node = script[0];
-
         setCurrentNode(_node);
         setPlaying(true);
         setStartPressed(true);
@@ -184,11 +184,10 @@ function Player(props) {
 
        setPlaying(!finished)
        setListening(finished);
-       console.log("playing is", !finished);
     }
 
     const renderAudioPlayers = ()=>{
-        console.log("in render audio playters with tracjs ", tracks);
+        
         return (tracks||[]).map((t,i)=>{
             return <AudioPlayer key={i} src={t.src} play={startpressed} onFinish={()=>onFinish(i)}/>
         });
@@ -206,11 +205,8 @@ function Player(props) {
             return s.id == _node.id;
         });
 
-        const {tracks:newTracks} = _tracks;
-
-        console.log("ok have tracks", newTracks);
+        const {tracks:newTracks} = _tracks || {};
         setTracks(newTracks || []);
-        console.log(newTracks || []);
     }
 
     const renderNextScenes = ()=>{
@@ -243,10 +239,73 @@ function Player(props) {
     const renderUpload = ()=>{
         return <div className={styles.uploadcontainer}>
                     <label className={styles.customfileupload}>
-			            <input  className={styles.fileupload} type="file" name="file" onChange={changeHandler} />
+			            <input  className={styles.fileupload} type="file" name="file" onChange={fileChangeHandler} />
                         upload your script!
 	                </label>
                    
+                </div>
+    }
+
+    const fetchTrack =  ({folder, id})=>{
+        //https://storyeditor.vercel.app/api/save
+       return new Promise((resolve, reject)=>{
+         request.post("http://localhost:3000/api/loadmedia").query({folder,id}).set('Content-Type', 'application/json').end(function(err,res){
+            if (err){
+                resolve("");
+            }
+            resolve(res.body);
+         });
+       })
+     }
+    const load = ()=>{
+        console.log("OK LOADING ID", scriptName);
+        request.get('/api/load').query({id:scriptName}).then(async (res) => {
+            const sources =[];
+            const {script} = res.body;
+            
+            const trackstodownload = script.reduce((acc,item)=>{
+              
+                const _tracks = item.tracks || [];
+                const id =  item.id.toLowerCase();
+
+                if (_tracks.length > 0){
+                    return {
+                        ...acc,
+                        [id]: _tracks
+                    }
+                }
+               return acc;
+            },{});
+
+         
+            for (const id of Object.keys(trackstodownload)){
+                const resolved = [];
+                for (const trackid of trackstodownload[id]){
+                    const src = await fetchTrack({folder:scriptName, id:trackid})
+                    resolved.push({id:trackid, src});
+                }
+                sources.push({id, tracks:resolved});
+            }
+
+            setSources(sources);
+           
+            const _script = script.map(s=>({...s, id:s.id.toLowerCase()}));
+            setScript(_script);
+            const startnode = sources.find(s=>s.id==_script[0].id);
+            
+            if (startnode && startnode.tracks){
+                setTracks(startnode.tracks);
+            }
+        })
+         .catch(err => {
+            console.log(err);
+         });
+    }
+
+    const renderLibrary = ()=>{
+        return <div className={styles.uploadcontainer}>
+			        <input value={scriptName} className={styles.textbox} type="text" name="scriptname" placeholder="script id" onChange={scriptChangeHandler} />
+                    <button className={styles.librarybutton} onClick={load}>load!</button>
                 </div>
     }
 
@@ -259,7 +318,7 @@ function Player(props) {
 
     return (
         <div className={styles.container}>
-            {!script && renderUpload()}
+            {!script && renderLibrary()}
             {script && renderListening()}
             {renderStory()}
             {renderAudioPlayers()}

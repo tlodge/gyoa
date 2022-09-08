@@ -24,6 +24,18 @@
     display: none;
 }
 
+.textbox{
+    margin:0px;
+    display: block;
+    padding: 7px 7px 7px 7px;
+    font-size: 1.5em;
+}
+
+.librarybutton{
+    font-size:1.2em;
+    margin: 10px;
+}
+
 .keywordcontainer{
     display:flex;
     width: calc(100vw - 20px); 

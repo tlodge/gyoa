@@ -13,7 +13,7 @@ module.exports = {
     };
 
     return config;
-  },
+  }
   /*async headers() {
     return [
       {
