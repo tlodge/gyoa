@@ -1,9 +1,10 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import admin from '../../lib/firebase';
 
-const firebase = admin.firestore();
+
 
 export default async (req, res) => {
+  const firebase = admin.firestore();
   const { id=""} = req.query;
   const script = await firebase.collection("scripts").doc(`${id}`).get();
   

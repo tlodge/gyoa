@@ -3,10 +3,9 @@ import styles from '../styles/Player.module.css'
 import * as tf from "@tensorflow/tfjs";
 import * as speech from "@tensorflow-models/speech-commands";
 import { MdMic} from "react-icons/md";
-
-import {  FaBookReader} from "react-icons/fa";
 import AudioPlayer from './AudioPlayer';
 import request from 'superagent';
+
 
 /*
  * commands that are recognised: "zero" to "nine", "up", "down", "left", "right", "go", "stop", "yes", "no"
@@ -29,10 +28,14 @@ function Player(props) {
   
     const [tracks, setTracks] = useState([]);
     const [listening, setListening] = useState(false);
-       
+    const [loading, setLoading] = useState(false);
     const [scriptName, setScriptName] = useState("");
+    const [progress, setProgress] = useState("0%");
 
     const [startpressed, setStartPressed] = useState(false);
+
+    const [countingDown, setCountingDown] = useState(false);
+    const [remaining, setRemaining] = useState(false);
 
     const loadModel = async () =>{
         // start loading model
@@ -103,7 +106,33 @@ function Player(props) {
     }
 
     useEffect(()=>{
-        
+        if (!playing && node){
+            console.log("setting timeouts");
+            Object.keys(node.rules).forEach((key)=>{
+                const _key = key.trim();
+                if (!isNaN(_key)){
+                    const setCountdown = (passed=0, finished)=>{
+                        setRemaining(Math.round((finished-passed) / 1000));
+
+                        if (passed == finished){
+                            nextNode(node.rules[key].toLowerCase());
+                            setAction();
+                            setListening(false);
+                            setPlaying(true);
+                            setCountingDown(false);
+                        }else{
+                            console.log("upadting.....", passed);
+                            setTimeout(()=>setCountdown(passed+1000, finished),1000)
+                        }
+                    }
+                    setCountingDown(true);
+                    setCountdown(0,  Number(_key)*1000);
+                }
+            },{});
+        }
+    },[playing, node]);
+
+    useEffect(()=>{
         if (node){
             const rules = Object.keys(node.rules).reduce((acc,key)=>{
                 return {
@@ -128,7 +157,7 @@ function Player(props) {
                 }
             }
         }        
-    },[action]);
+    },[action, playing]);
 
     const fileChangeHandler = (event) => {
         handleSubmission(event.target.files[0]);
@@ -198,7 +227,7 @@ function Player(props) {
         const _node = script.find(s=>{
             return s.id == id;
         })
-        
+       
         setCurrentNode(_node);
         
         const _tracks =  sources.find(s=>{
@@ -211,29 +240,47 @@ function Player(props) {
 
     const renderNextScenes = ()=>{
         if (node && node.rules){
-            return Object.keys(node.rules).map((key)=>{
-                return <div  className={styles.keyword} style={{color: key.toLowerCase()==action ? "#01ABB3" : "#888"}} key={key} onClick={()=>setAction(key.toLocaleLowerCase())}>{key}</div>
+            const tags = Object.keys(node.rules).map((key)=>{
+                if (isNaN(key)){
+                    return <div  className={styles.keyword} style={{color: key.toLowerCase()==action ? "#01ABB3" : "#888"}} key={key} onClick={()=>setAction(key.toLocaleLowerCase())}>{key}</div>
+                }
             });
+
+            return tags;
+            
         }
         return null;
     }
 
     const renderCurrentNode = ()=>{
-        return  <div className={styles.keywordcontainer}>
-            {!playing && renderNextScenes()}
-        </div>
+        return  <div>
+                    {node && <div className={styles.storytextcontainer}>
+                        <div className={styles.storytext}>{node.text}</div>
+                    </div>}
+                    
+                </div>
+    }
+
+    const renderMic = ()=>{
+        return <div className={styles.micontainer}>
+                    <div className={styles.listening}>
+                        <MdMic/>
+                    </div>
+                </div>
     }
 
     const renderListening = ()=>{
-       return <div className={styles.micontainer}>
-                <div className={styles.listening}>
-                    {listening && <MdMic/>}
-                    {!listening && <FaBookReader/>}
+       
+        if (!script){
+            return <></>
+        }
+
+        return <div style={{display:"flex", flexDirection:"column"}}> 
+                    {listening && node && renderMic()}
+                    <div className={styles.heard}>
+                        {listening && action && node && <div>{`"${action}"`}</div>}
+                    </div>
                 </div>
-                <div className={styles.heard}>
-                    {listening && action && <div>{`"${action}"`}</div>}
-                </div>
-            </div>
     }
 
     const renderUpload = ()=>{
@@ -247,8 +294,6 @@ function Player(props) {
     }
 
     const fetchTrack =  ({folder, id})=>{
-        //https://storyeditor.vercel.app/api/save
-        //"http://localhost:3000/api/loadmedia"
        return new Promise((resolve, reject)=>{
          request.post("/api/loadmedia").query({folder,id}).set('Content-Type', 'application/json').end(function(err,res){
             if (err){
@@ -257,9 +302,12 @@ function Player(props) {
             resolve(res.body);
          });
        })
-     }
+    }
+
     const load = ()=>{
-        console.log("OK LOADING ID", scriptName);
+        setLoading(true);
+
+   
         request.get('/api/load').query({id:scriptName}).then(async (res) => {
             const sources =[];
             const {script} = res.body;
@@ -278,12 +326,21 @@ function Player(props) {
                return acc;
             },{});
 
-         
+            
+            const tracks = Object.keys(trackstodownload).reduce((acc, id)=>{
+                return acc + trackstodownload[id].length;
+            },0);
+    
+            let downloaded = 0;
+
             for (const id of Object.keys(trackstodownload)){
-                const resolved = [];
+                const resolved = [];    
                 for (const trackid of trackstodownload[id]){
                     const src = await fetchTrack({folder:scriptName, id:trackid})
                     resolved.push({id:trackid, src});
+                   
+                    downloaded+=1;
+                    setProgress(`${Math.round(downloaded/tracks * 100)}%`);
                 }
                 sources.push({id, tracks:resolved});
             }
@@ -297,32 +354,61 @@ function Player(props) {
             if (startnode && startnode.tracks){
                 setTracks(startnode.tracks);
             }
+            setLoading(false);
         })
          .catch(err => {
+            setLoading(false);
+            setProgress("0%");
             console.log(err);
          });
     }
 
+    const renderLoading = ()=>{
+        if (loading){
+            return <div className={styles.loadingcontainer}>
+                        <div className={styles.progress}>
+                            {progress}
+                        </div>
+                    </div>
+        }
+    }
     const renderLibrary = ()=>{
-        return <div className={styles.uploadcontainer}>
+        if (!script && !loading){
+            return <div className={styles.uploadcontainer}>
 			        <input value={scriptName} className={styles.textbox} type="text" name="scriptname" placeholder="script id" onChange={scriptChangeHandler} />
                     <button className={styles.librarybutton} onClick={load}>load!</button>
                 </div>
+        }
     }
 
     const renderStory = ()=>{
-        return <div className={styles.startcontainer}>
-            {sources.length > 0 && !node && <button className={styles.startbutton} onClick={startStory}>Start!</button>}
-            {renderCurrentNode()}       
-        </div>
+        if (script){
+            return <div className={styles.startcontainer} style={{height : node ? 'auto' : "100vh" }}>
+                {sources.length > 0 && !node && <button className={styles.startbutton} onClick={startStory}>Start!</button>}
+                {renderCurrentNode()}       
+            </div>
+        }
     }
 
+    const renderCountdown  = ()=>{
+        if (countingDown){
+            return <div className={styles.countdowncontainer}>
+                <div className={styles.countdown}>{remaining}</div>
+            </div>
+        }
+    }
     return (
         <div className={styles.container}>
-            {!script && renderLibrary()}
-            {script && renderListening()}
+            {renderLoading()}
+            {renderLibrary()}
+           
             {renderStory()}
+            {renderListening()}
+            <div className={styles.keywordcontainer}>
+                {!playing && node &&  renderNextScenes()}
+            </div>
             {renderAudioPlayers()}
+            {renderCountdown()}
         </div>
     )
 }
