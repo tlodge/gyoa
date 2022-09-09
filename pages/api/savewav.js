@@ -1,8 +1,8 @@
 import admin from '../../lib/firebase';
-const storage = admin.storage();
+
 
 export const config = { api: { bodyParser: { sizeLimit: '4.5mb' } } }
-const mybucket = storage.bucket(process.env.BUCKETID);
+
 
 const allowCors = fn => async (req, res) => {
     res.setHeader('Access-Control-Allow-Credentials', true)
@@ -24,10 +24,10 @@ const allowCors = fn => async (req, res) => {
   
   const handler = async (req, res) => {
     console.log("seen incoming save request");
-    if (req.method === "POST"){
-        
+    if (req.method === "POST"){        
+        const storage = admin.storage();
+        const mybucket = storage.bucket(process.env.BUCKETID);
         const {folder, id, data} = req.body;
-        console.log(folder,id);
         mybucket.file(`${folder}/${id}`).save(data);
     }
     res.end()
