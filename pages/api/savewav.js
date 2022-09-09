@@ -24,11 +24,14 @@ const allowCors = fn => async (req, res) => {
   
   const handler = async (req, res) => {
     console.log("seen incoming save request");
-    if (req.method === "POST"){        
+    if (req.method === "POST"){   
+        console.log("it is a post method");     
         const storage = admin.storage();
         const mybucket = storage.bucket(process.env.BUCKETID);
         const {folder, id, data} = req.body;
-        mybucket.file(`${folder}/${id}`).save(data);
+        console.log("have folder", folder, " and id", id);
+        await mybucket.file(`${folder}/${id}`).save(data).catch((err)=>console.log(err));
+       console.log("successfully uploaded file!");
     }
     res.end()
   }
