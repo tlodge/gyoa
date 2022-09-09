@@ -23,10 +23,11 @@ const allowCors = fn => async (req, res) => {
   }
   
   const handler = async (req, res) => {
-    
+    console.log("seen incoming save request");
     if (req.method === "POST"){
         
         const {folder, id, data} = req.body;
+        console.log(folder,id);
         mybucket.file(`${folder}/${id}`).save(data);
     }
     res.end()
