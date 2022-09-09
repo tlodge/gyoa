@@ -248,8 +248,9 @@ function Player(props) {
 
     const fetchTrack =  ({folder, id})=>{
         //https://storyeditor.vercel.app/api/save
+        //"http://localhost:3000/api/loadmedia"
        return new Promise((resolve, reject)=>{
-         request.post("http://localhost:3000/api/loadmedia").query({folder,id}).set('Content-Type', 'application/json').end(function(err,res){
+         request.post("/api/loadmedia").query({folder,id}).set('Content-Type', 'application/json').end(function(err,res){
             if (err){
                 resolve("");
             }
