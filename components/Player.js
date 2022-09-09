@@ -376,7 +376,7 @@ function Player(props) {
         if (!script && !loading){
             return <div className={styles.uploadcontainer}>
 			        <input value={scriptName} className={styles.textbox} type="text" name="scriptname" placeholder="script id" onChange={scriptChangeHandler} />
-                    <button className={styles.librarybutton} onClick={load}>load!</button>
+                    <button className={styles.startbutton} style={{margin:10}} onClick={load}>load!</button>
                 </div>
         }
     }
