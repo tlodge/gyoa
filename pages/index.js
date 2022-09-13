@@ -1,11 +1,23 @@
 import styles from '../styles/Home.module.css'
-import Player from '../components/Player';
-
+import { useRouter } from 'next/router'
+import { useEffect } from 'react';
+import Loader from '../components/Loader';
 export default function Home(){
+  
+  const router = useRouter();
+
+  useEffect(()=>{
+    const consented = localStorage.getItem("consent");
+    console.log("consented", consented);
+    if (!consented){
+      router.push("/consent");
+    }
+  },[]);
+
   return (
     <>
       <div className={styles.App}>
-        <Player />
+        <Loader />
       </div>
     </>
   );

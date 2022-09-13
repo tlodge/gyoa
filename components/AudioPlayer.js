@@ -5,17 +5,26 @@ function AudioPlayer({src, onFinish, play}) {
    const playerRef = useRef();
 
     useEffect(()=>{
+        
         if(play){
+           
             playerRef.current.src = src; 
+            
+          
+            
             playerRef.current.play();
+           
+
             playerRef.current.onended = ()=>{
                 onFinish();
             };
         }
     },[play, src]);
    
+    
+
     return (
-        <audio src={src} ref={playerRef} style={{display:"none"}} controls="controls" />
+        <audio src={src}  ref={playerRef} style={{display:"none"}} controls="controls" />
     )
 }
 
