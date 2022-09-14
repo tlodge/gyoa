@@ -6,7 +6,7 @@ import { MdMic} from "react-icons/md";
 import AudioPlayer from './AudioPlayer';
 import request from 'superagent';
 import { Navbar, Dropdown, Text } from "@nextui-org/react";
-import Consent from '../pages/consent';
+import logit from '../lib/logger';
 /*
  * commands that are recognised: "zero" to "nine", "up", "down", "left", "right", "go", "stop", "yes", "no"
  */
@@ -42,7 +42,8 @@ function Player(props) {
     const [remaining, setRemaining] = useState(false);
     const [waypoints, setWaypoints] = useState(["first_scne_one", "second_scene_two", "thirsd sene there", "adaaad asds"]);
     const [showWaypoints, setShowWaypoints] = useState(false);
-    
+    const [logId, setLogId] = useState(false);
+
     const loadModel = async () =>{
         // start loading model
         const recognizer = await speech.create("BROWSER_FFT") 
@@ -55,7 +56,12 @@ function Player(props) {
         setListening(true);
       }
     
+ 
+
     useEffect(()=>{
+        const _logId = localStorage.getItem("loggerId")
+        setLogId(_logId);
+
        const start = async ()=>{
             await loadModel(); 
             load(storyId)
@@ -63,6 +69,8 @@ function Player(props) {
        start();
     }, []);
     
+
+  
 
     useEffect(()=>{
         if (script){
@@ -172,6 +180,7 @@ function Player(props) {
                 for (const a of action.split(" ")){
                     const _a = a.toLowerCase();
                     if (ruleset.indexOf(_a) !== -1){
+                        logit(logId, "action", {storyId,_a});
                         setTimeout(()=>{
                             nextNode(rules[_a].toLowerCase());
                             setAction();
@@ -183,12 +192,6 @@ function Player(props) {
             }
         }     
     },[action, playing]);
-
-    const fileChangeHandler = (event) => {
-        handleSubmission(event.target.files[0]);
-	};
-
-  
 
     const startStory = ()=>{
        
@@ -244,10 +247,10 @@ function Player(props) {
         });
     }
 
-    const nextNode = (id)=>{
+    const nextNode =  (id)=>{
        
-      
-       
+        logit(logId, "scenechange", {storyId,id});
+
         const _node = script.find(s=>{
             return s.id == id;
         })
@@ -379,6 +382,7 @@ function Player(props) {
          .catch(err => {
             setLoading(false);
             setProgress("0%");
+            logit(logId, "loaderror", {storyId,err});
             console.log(err);
          });
     }

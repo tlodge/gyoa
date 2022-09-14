@@ -1,6 +1,6 @@
 .container{
-    width: calc(100vw - 20px); /* marging 10px */
-    height: calc(100vh - 60px); /* toolbar 40px + margin 10px * 2 */
+    width: calc(100vw - 0px); /* marging 10px */
+    height: calc(100vh - 80px); /* toolbar 40px + margin 10px * 2 */
     display: flex;
     flex-direction:column;
     align-items: center;
