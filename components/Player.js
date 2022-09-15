@@ -423,6 +423,7 @@ function Player(props) {
          if (useCache){
             const cached = await fetchFromCache(id);
             if (cached.trim() !== ""){
+                console.log("succesfully retrieved track from cache");
                 resolve(cached);
                 return;
             }
@@ -458,6 +459,7 @@ function Player(props) {
             const latestts = localStorage.getItem(`${storyId}-ts`)
             const havelatest = `${latestts}` == `${ts}`;
            
+            console.log("use cache is", havelatest);
             const trackstodownload = script.reduce((acc,item)=>{
               
                 const _tracks = item.tracks || [];
