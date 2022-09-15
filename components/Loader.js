@@ -1,23 +1,25 @@
 import styles from '../styles/Loader.module.css'
 import request from 'superagent';
-import { Button, Spacer,  Navbar, Text } from '@nextui-org/react';
+import { Button, Spacer,  Navbar, Text, StyledLoading } from '@nextui-org/react';
 import {useEffect, useState} from 'react';
 import { useRouter } from 'next/router'
-
+//import Logger from '../lib/logger';
 
 const about = `Welcome to the Grow your Own Story app.  We are nearly there!  You just need to provide us with the name of the story you'd like to explore!`
 
-function Loader(props) {
+function Loader({logger}) {
     
     const router = useRouter();
     const [variants, setVariants] = useState([]);
     const [scriptName, setScriptName] = useState("");
     const [showLogId, setShowLogId] = useState(false);
     const [logId, setLogId]= useState();
+    const [loading, setLoading] = useState(false);
 
     useEffect(()=>{
         const _logId = localStorage.getItem("loggerId")
         setLogId(_logId);
+        //const logger = new Logger(new Worker('worker.js'));
     },[]);
 
     const scriptChangeHandler = (event) => {
@@ -26,24 +28,28 @@ function Loader(props) {
 
 
     const routeTo = (id)=>{   
+        setLoading(true);
         router.push(`/story/${id}`); 
     }
 
     const renderVariants = ()=>{
+        const _renderLabel = (label, id)=>{
+            return <span>{label} <span style={{fontWeight:800}}>{id}</span></span>
+        }
         const items = variants.map(v=>{
-            return <> 
+            return <div key={v.id}> 
+                    <Text  onClick={()=>routeTo(v.id)} css={{ color:"white", textAlign: "center", margin:8, fontSize:"1.2em"}}>{_renderLabel(v.label, v.id)}</Text>
+                   
                     <div onClick={()=>routeTo(v.id)} className={styles.imagerow}>
                         <div className={styles.imagecontainer}>
-                            <img src="logo.svg" height="150px"/>
+                            <img  src={v.icon} height="150px"/>
                         </div>
                     </div>
-                    <Text key={v.id} onClick={()=>routeTo(v.id)} css={{ color:"white", margin:8, fontSize:"1.2em"}}>{v.label}</Text>
-               </>
+              
+               </div>
         })
-        if (items.length > 0){
-            return  <div>
-                        {items}
-                    </div>
+        if (!loading && items.length > 0){
+            return  <div className={styles.variantcontainer}> {items} </div>
         }
         
     }
@@ -85,8 +91,26 @@ function Loader(props) {
                 </div>
     }
 
+    const renderLoading = ()=>{
+        return <div className={styles.loadingcontainer}> 
+            <div className={styles.progress}>fetching the story!</div>
+           <div className={styles.imagerow}>
+                    <div className={styles.imagecontainer}>
+                        <img className={styles.spinning} src="logo.svg" height="150px"/>
+                    </div>
+               </div>
+        </div>
+    }
+
+    const renderFetchStory = ()=>{
+        return <div className={styles.container}> 
+                {variants.length <= 0 && renderLibrary()}
+                {renderVariants()}
+                </div>
+    }
+
     return (<div>
-                <Navbar isBordered={false} variant="sticky">
+             <Navbar isBordered={false} variant="sticky">
                     <Navbar.Brand>
                    
                     <Text b color="inherit">
@@ -94,18 +118,20 @@ function Loader(props) {
                     </Text>
                     </Navbar.Brand>
                     <Navbar.Content>
-                        <Navbar.Item>
-                        <Button auto  flat onPress={()=>setShowLogId(!showLogId)}>{!showLogId ? 'id' : 'hide'}</Button>
+                        <Navbar.Item id="itemone">
+                            <Button id="mybutton" auto  flat onPress={()=>setShowLogId(!showLogId)}>{!showLogId ? 'id' : 'hide'}</Button>
                         </Navbar.Item>
                     </Navbar.Content>
                 </Navbar>   
                 {showLogId && renderLogId()}
-                <div className={styles.container}> 
-                    {variants.length <= 0 && renderLibrary()}
-                    {renderVariants()}
-                </div>
+                {!loading && renderFetchStory()}
+                {loading && renderLoading()}
             </div>
     )
 }
+
+
+   
+               
 
 export default Loader;

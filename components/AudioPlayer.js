@@ -1,20 +1,26 @@
-import {useEffect, useRef} from 'react';
+import {useEffect, useState, useRef} from 'react';
 
-function AudioPlayer({src, onFinish, play}) {
+function AudioPlayer({src, onFinish, play, paused}) {
     
    const playerRef = useRef();
+   const [initialised, setInitialised] = useState(false);
+
+   useEffect(()=>{
+     if (initialised){
+        if (paused){
+            playerRef.current.pause();
+        }else{
+            playerRef.current.play();
+        }
+     }
+   },[paused]);
 
     useEffect(()=>{
         
         if(play){
-           
-            playerRef.current.src = src; 
-            
-          
-            
+            setInitialised(true);
+            playerRef.current.src = src;   
             playerRef.current.play();
-           
-
             playerRef.current.onended = ()=>{
                 onFinish();
             };

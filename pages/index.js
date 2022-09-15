@@ -2,6 +2,8 @@ import styles from '../styles/Home.module.css'
 import { useRouter } from 'next/router'
 import { useEffect } from 'react';
 import Loader from '../components/Loader';
+
+
 export default function Home(){
   
   const router = useRouter();
@@ -17,7 +19,7 @@ export default function Home(){
   return (
     <>
       <div className={styles.App}>
-        <Loader />
+        <Loader/>
       </div>
     </>
   );

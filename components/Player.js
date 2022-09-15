@@ -6,18 +6,27 @@ import { MdMic} from "react-icons/md";
 import AudioPlayer from './AudioPlayer';
 import request from 'superagent';
 import { Navbar, Dropdown, Text } from "@nextui-org/react";
-import logit from '../lib/logger';
+import {format} from '../lib/utils';
+import { AiOutlineAudioMuted, AiOutlineAudio, AiOutlinePauseCircle, AiOutlinePlayCircle } from "react-icons/ai";
+import { useRouter } from 'next/router'
+import { resolve } from 'styled-jsx/css';
 /*
  * commands that are recognised: "zero" to "nine", "up", "down", "left", "right", "go", "stop", "yes", "no"
  */
 
 let inProgress = {};  //var that is independent of rendering logic!
 
+const logit = ()=>{
 
+}
 function Player(props) {
     
     const {id:storyId} = props;
     const timer = useRef(null);
+    const db = useRef(null);
+
+    const router = useRouter();
+
   
 
     const [model, setModel] = useState(null)
@@ -32,7 +41,7 @@ function Player(props) {
   
     const [tracks, setTracks] = useState([]);
     const [listening, setListening] = useState(false);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
    
     const [progress, setProgress] = useState("0%");
 
@@ -40,33 +49,115 @@ function Player(props) {
 
     const [countingDown, setCountingDown] = useState(false);
     const [remaining, setRemaining] = useState(false);
-    const [waypoints, setWaypoints] = useState(["first_scne_one", "second_scene_two", "thirsd sene there", "adaaad asds"]);
+    const [waypoints, setWaypoints] = useState([]);
     const [showWaypoints, setShowWaypoints] = useState(false);
     const [logId, setLogId] = useState(false);
 
+    const [muted, _setMuted] = useState(false);
+    const [paused, setPaused] = useState(false);
+   
+    const setDB = (_db)=>{
+        db.current = _db;
+    }
+
+    const setMuted = (value)=>{
+        if (!navigator.mediaDevices){
+            _setMuted(true);
+        }else{
+            _setMuted(value);
+        }
+    }
+
     const loadModel = async () =>{
-        // start loading model
-        const recognizer = await speech.create("BROWSER_FFT") 
-       // check if model is loaded
-        await recognizer.ensureModelLoaded();
-        // store model instance to state
-        setModel(recognizer)
-       // store command word list to state
-        setLabels(recognizer.wordLabels())
+       
+        if (navigator.mediaDevices){
+            // start loading model
+            const recognizer = await speech.create("BROWSER_FFT") 
+        // check if model is loaded
+            await recognizer.ensureModelLoaded();
+            // store model instance to state
+            setModel(recognizer)
+        // store command word list to state
+            setLabels(recognizer.wordLabels())
+            
+        }else{
+            setMuted(true);
+        }
         setListening(true);
       }
     
- 
+    const setupstorage = ()=>{
+        return new Promise((resolve, reject)=>{
+            const dbName = "stories";
+            const request = indexedDB.open(dbName, 3);
+        
+            request.onsuccess = event => {
+                setDB(event.target.result);  
+                console.log("ok have set db!!");
+                resolve();
+                return; 
+            };
+        
+            request.onerror = event => {
+                console.log("error creating database!");
+                reject();
+            };
+            
+            request.onupgradeneeded = event => {
+            
+                const _db = event.target.result;
+                setDB(_db);
+                console.log("ok have set db!!");
+                resolve();
+                try{
+                    _db.createObjectStore("tracks", { keyPath: "id" });
+                }
+                catch(err){
+                    //ignore as thrown when object store already exixts
+                }
+            };
+        });
+    }
 
     useEffect(()=>{
+
+        
+       
+
+       const start = async ()=>{
+            await setupstorage();
+            load(storyId);
+            await loadModel(); 
+       }
+
+       start();
+
+        const getwakelock = async ()=>{
+            if ('wakeLock' in navigator) {
+                let wakeLock = null;
+
+                // Function that attempts to request a screen wake lock.
+                const requestWakeLock = async () => {
+                try {
+                    wakeLock = await navigator.wakeLock.request();
+                    wakeLock.addEventListener('release', () => {
+                    console.log('Screen Wake Lock released:', wakeLock.released);
+                    });
+                    console.log('Screen Wake Lock released:', wakeLock.released);
+                } catch (err) {
+                    console.error(`${err.name}, ${err.message}`);
+                }
+                };
+                
+                // Request a screen wake lock…
+                await requestWakeLock();
+            }
+        }
+        getwakelock();
         const _logId = localStorage.getItem("loggerId")
         setLogId(_logId);
 
-       const start = async ()=>{
-            await loadModel(); 
-            load(storyId)
-       }
-       start();
+      
     }, []);
     
 
@@ -108,7 +199,9 @@ function Player(props) {
                     const max = argMax(Object.values(result.scores));
                     
                     const action = labels[argMax(Object.values(result.scores))];
-                    setAction(action);
+                    if (!muted){
+                        setAction(action);
+                    }
                 }, {includeSpectrogram:true, probabilityThreshold:0.99})
             }catch(err){
 
@@ -117,10 +210,10 @@ function Player(props) {
             try{
                 model.stopListening();
             }catch(err){
-                console.log("error stopping listning!", err);
+                console.log("error stopping listening!", err);
             }
         }
-    }, [listening, model]);
+    }, [listening, model,muted]);
 
     const splitkey = (key, value)=>{
         return key.split(/(\s+)/).reduce((acc, item)=>{
@@ -149,7 +242,6 @@ function Player(props) {
                                 
                                     nextNode(node.rules[key].toLowerCase());
                                     setAction();
-                                    setListening(false);
                                     setPlaying(true);
                                     setCountingDown(false);
                             }
@@ -205,25 +297,6 @@ function Player(props) {
         setStartPressed(true);
     }
 
-	const handleSubmission = (selectedFile) => {
-        const fileReader = new FileReader();
-        fileReader.readAsText(selectedFile, "UTF-8");
-        const sources = [];
-    
-        fileReader.onload = e => {
-           const {tracks, script} = JSON.parse(e.target.result);
-           Object.keys(tracks).map (key=>{
-              if (tracks[key]){
-                  sources.push({id:key.toLowerCase(), tracks:tracks[key]});
-              }
-           });
-
-           setSources(sources);
-           setScript(script.map(s=>({...s, id:s.id.toLowerCase()})));
-           setTracks(sources[0].tracks);
-        };
-    };
-
     const onFinish = (i)=>{
       
        inProgress = {
@@ -243,14 +316,14 @@ function Player(props) {
     
         return (tracks||[]).map((t,i)=>{
 
-            return <AudioPlayer key={i} src={t.src} play={startpressed} onFinish={()=>onFinish(i)}/>
+            return <AudioPlayer key={i} src={t.src} paused={paused} play={startpressed} onFinish={()=>onFinish(i)}/>
         });
     }
 
     const nextNode =  (id)=>{
        
         logit(logId, "scenechange", {storyId,id});
-
+        setListening(false);
         const _node = script.find(s=>{
             return s.id == id;
         })
@@ -272,19 +345,20 @@ function Player(props) {
 
         const tags = Object.keys(rules).map((key)=>{
             if (isNaN(key)){
-                return <div  className={styles.keyword} style={{color: key.toLowerCase()==action ? "#01ABB3" : "#888"}} key={key} onClick={()=>setAction(key.toLocaleLowerCase())}>{key}</div>
+                return <div  className={styles.keyword} style={{color: key.toLowerCase()==action ? "#01ABB3" : "#7ED8A1"}} key={key} onClick={()=>setAction(key.toLocaleLowerCase())}>{key}</div>
             }
         });
 
         if  (!playing && node && node.rules){ 
             return <div className={styles.keywordcontainer}>{tags}</div>
         }
+        
     }
 
     const renderCurrentNode = ()=>{
         return  <div>
                     {node && <div className={styles.storytextcontainer}>
-                        <div className={styles.storytext}>{node.text}</div>
+                        <div className={styles.storytext}>{format(node.text)}</div>
                     </div>}
                     
                 </div>
@@ -304,7 +378,7 @@ function Player(props) {
             return <></>
         }
 
-        return <div style={{display:"flex", flexDirection:"column"}}> 
+        return <div className={styles.listeningcontainer}> 
                     {listening && node && renderMic()}
                     <div className={styles.heard}>
                         {listening && action && node && <div>{`"${action}"`}</div>}
@@ -312,27 +386,77 @@ function Player(props) {
                 </div>
     }
 
-    const fetchTrack =  ({folder, id})=>{
+    const fetchFromCache = async (trackid)=>{
+        return new Promise((resolve, reject)=>{
+            var tx = db.current.transaction("tracks", "readwrite");
+            var store = tx.objectStore("tracks");
+            const request = store.get(trackid);
 
-       return new Promise((resolve, reject)=>{
-         request.post("/api/loadmedia").query({folder,id}).set('Content-Type', 'application/json').end(function(err,res){
-            if (err){
-               
+            request.onsuccess = event => {
+                const {result={}} = event.target;
+                const {src} = result;
+                resolve(src);
+            }
+
+            request.onerror = err =>{
                 resolve("");
             }
-           
-            resolve(res.body);
-         });
+        });
+    }
+
+    const fetchFromServer = ({folder, id})=>{
+        return new Promise(async (resolve, reject)=>{
+            request.post("/api/loadmedia").query({folder,id}).set('Content-Type', 'application/json').end(async function(err,res){
+                if (err){
+                    resolve("");
+                }else{
+                    await saveTrack(id, res.body)
+                    resolve(res.body);
+                }
+            });
+        });
+    }
+
+    const fetchTrack =  ({useCache=false, folder, id})=>{
+       
+       return new Promise(async (resolve, reject)=>{
+         if (useCache){
+            const cached = await fetchFromCache(id);
+            if (cached.trim() !== ""){
+                resolve(cached);
+                return;
+            }
+         }
+         const src = await fetchFromServer({folder, id});
+         resolve(src); 
        })
+    }
+
+    
+    const saveTrack = (trackid, src)=>{
+        
+        return new Promise((resolve, reject)=>{
+            var tx = db.current.transaction("tracks", "readwrite");
+            var store = tx.objectStore("tracks");
+            const insert = store.put({id:trackid,src});
+            insert.onsuccess = () => {
+                resolve();
+            }
+        });
     }
 
     const load = (storyId)=>{
         setLoading(true);
+        if (!storyId){
+            router.push("/");
+        }
+        
 
         request.get('/api/load').query({id:storyId}).then(async (res) => {
             const sources =[];
-            const {script} = res.body;
-            
+            const {script,ts} = res.body;
+            const latestts = localStorage.getItem(`${storyId}-ts`)
+            const havelatest = `${latestts}` == `${ts}`;
            
             const trackstodownload = script.reduce((acc,item)=>{
               
@@ -345,7 +469,7 @@ function Player(props) {
                         [id]: _tracks
                     }
                 }
-               return acc;
+                return acc;
             },{});
 
             
@@ -358,14 +482,15 @@ function Player(props) {
             for (const id of Object.keys(trackstodownload)){
                 const resolved = [];    
                 for (const trackid of trackstodownload[id]){
-                    const src = await fetchTrack({folder:storyId, id:trackid})
-                    resolved.push({id:trackid, src});
-                   
+                    const src = await fetchTrack({useCache:havelatest, folder:storyId, id:trackid})
+                    resolved.push({id:trackid, src}); 
                     downloaded+=1;
                     setProgress(`${Math.round(downloaded/tracks * 100)}%`);
                 }
                 sources.push({id, tracks:resolved});
             }
+            
+            localStorage.setItem(`${storyId}-ts`, ts);
 
             setSources(sources);
            
@@ -390,19 +515,25 @@ function Player(props) {
     const renderLoading = ()=>{
         if (loading){
             return <div className={styles.loadingcontainer}>
-                        <div className={styles.progress}> 
-                            {progress}
+                         <div className={styles.imagerow}>
+                                <div className={styles.progress}>nearly there...</div>
+                                <div className={styles.imagecontainer}>
+                                    <img src="../../logo.svg" height="200px"/>
+                                </div>
+                                <div className={styles.progress}>{progress}</div>
                         </div>
                     </div>
         }
     }
 
-
+// {sources.length > 0 && !node && <button className={styles.startbutton} onClick={startStory}>Start!</button>}
     const renderStory = ()=>{
         if (script){
             
             return <div className={styles.startcontainer} style={{height : node ? 'auto' : "100vh" }}>
-                {sources.length > 0 && !node && <button className={styles.startbutton} onClick={startStory}>Start!</button>}
+               
+                {sources.length > 0 && !node && <div onClick={startStory} className={styles.imagecontainer}><img src="../../start.svg" height="200px"/></div>}
+                {sources.length > 0 && !node && <div onClick={startStory} className={styles.progress}>Start</div>}
                 {renderCurrentNode()}       
             </div>
         }
@@ -449,6 +580,24 @@ function Player(props) {
                 </Dropdown>
     }
 
+    const renderMuted = ()=>{
+        if(startpressed){
+            if (muted){
+                return <div onClick={()=>setMuted(!muted)} className={styles.navbaricon}><AiOutlineAudioMuted/></div>
+            }
+            return <div onClick={()=>setMuted(!muted)} className={styles.navbaricon}><AiOutlineAudio/></div>
+        }
+    }
+
+    const renderPaused = ()=>{
+        if(startpressed){
+            if (paused){
+                return <div onClick={()=>setPaused(!paused)} className={styles.navbaricon}><AiOutlinePlayCircle/></div>
+            }
+            return <div onClick={()=>setPaused(!paused)} className={styles.navbaricon}><AiOutlinePauseCircle/></div>
+        }
+    }
+
     const renderNavBar = ()=>{
 
         return <>
@@ -460,23 +609,36 @@ function Player(props) {
                     </Text>
                     </Navbar.Brand>
                     <Navbar.Content activeColor={"red"} >
+                          
                         {renderWaypoints()}
+                        <Navbar.Link>
+                           {renderPaused()}
+                        </Navbar.Link>
+                        <Navbar.Link>
+                           {renderMuted()}
+                        </Navbar.Link>
                     </Navbar.Content>
+                   
                 </Navbar>
                 {showWaypoints && renderWaypoints()}
              </>
                 
     }
-
+   
+    const renderResponses = ()=>{
+        return <>
+            {renderListening()}
+            {renderChoices()}
+            {renderCountdown()}
+        </>
+    }
     return (
         <div className={styles.container}>
+            {renderAudioPlayers()}
             {renderNavBar()}
             {renderLoading()}
             {renderStory()}
-            {renderListening()}
-            {renderChoices()}
-            {renderAudioPlayers()}
-            {renderCountdown()}
+            {listening && startpressed && renderResponses()}
         </div>
     )
 }

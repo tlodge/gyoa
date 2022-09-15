@@ -8,6 +8,7 @@ export default async (req, res) => {
   const {folder, id=""} = req.query;
   
   try{
+    console.log("downloading file",`${folder}/${id}`);
     const file = await mybucket.file(`${folder}/${id}`).download();
     const data = Buffer.from(file[0], 'base64').toString('ascii');
     res.status(200).json(data)
