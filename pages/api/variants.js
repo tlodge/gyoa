@@ -12,7 +12,6 @@ export default async (req, res) => {
     return;
   }
 
-    console.log("ok searching for", id);
 
     try  {
         const story = await firebase.collection("scripts").doc(`${id}`).get();

@@ -1,25 +1,38 @@
 import styles from '../styles/Loader.module.css'
 import request from 'superagent';
 import { Button, Spacer,  Navbar, Text, StyledLoading } from '@nextui-org/react';
-import {useEffect, useState} from 'react';
-import { useRouter } from 'next/router'
-//import Logger from '../lib/logger';
+import {useEffect, useState, useRef} from 'react';
+import { useRouter} from 'next/router'
+import Logger from '../lib/logger';
+
 
 const about = `Welcome to the Grow your Own Story app.  We are nearly there!  You just need to provide us with the name of the story you'd like to explore!`
 
-function Loader({logger}) {
-    
+function Loader() {
+
+    const logger = useRef(null); 
     const router = useRouter();
-    const [variants, setVariants] = useState([]);
+    const [variants, setVariants] = useState([{icon:"story.svg", label: `Listen to`, id:"silverquest"},{icon:"explore.svg", label: `Explore`, id:"silverquest-explore"} ]);
     const [scriptName, setScriptName] = useState("");
     const [showLogId, setShowLogId] = useState(false);
     const [logId, setLogId]= useState();
     const [loading, setLoading] = useState(false);
 
+    const log = (type, data)=>{
+        console.log("logging", type, data);
+        if (!logId){
+            const _logId = localStorage.getItem("loggerId");
+            setLogId(_logId);
+            logger.current.log(_logId, type, data)
+        }else{
+            logger.current.log(logId, type, data)
+        }
+    }
+
     useEffect(()=>{
-        const _logId = localStorage.getItem("loggerId")
-        setLogId(_logId);
-        //const logger = new Logger(new Worker('worker.js'));
+       
+        logger.current = new Logger(new Worker('worker.js'));
+        log("app init", "");
     },[]);
 
     const scriptChangeHandler = (event) => {
@@ -28,13 +41,14 @@ function Loader({logger}) {
 
 
     const routeTo = (id)=>{   
+        log("variant chosen", id);
         setLoading(true);
         router.push(`/story/${id}`); 
     }
 
     const renderVariants = ()=>{
         const _renderLabel = (label, id)=>{
-            return <span>{label} <span style={{fontWeight:800}}>{id}</span></span>
+            return <span>{label} <span style={{fontWeight:800}}>{`Quest for Silver`}</span></span>
         }
         const items = variants.map(v=>{
             return <div key={v.id}> 
@@ -54,15 +68,15 @@ function Loader({logger}) {
         
     }
 
-    const fetchVariants  = ()=>{
-        request.get('/api/variants').query({id:scriptName || ""}).then(async (res) => {
+    const fetchVariants  = (name)=>{
+        request.get('/api/variants').query({id:name || ""}).then(async (res) => {
             const variants = res.body;
             setScriptName("");
             setVariants(variants);
         });
     }
 
-    const renderLibrary = ()=>{
+    /*const renderLibrary = ()=>{
         
         return <>
                 <div className={styles.imagerow}>
@@ -83,7 +97,7 @@ function Loader({logger}) {
                 
            
             </>
-    }
+    }*/
 
     const renderLogId = ()=>{
         return <div  className={styles.logbox}>
@@ -104,7 +118,7 @@ function Loader({logger}) {
 
     const renderFetchStory = ()=>{
         return <div className={styles.container}> 
-                {variants.length <= 0 && renderLibrary()}
+                {/*variants.length <= 0 && renderLibrary()*/}
                 {renderVariants()}
                 </div>
     }
@@ -114,7 +128,7 @@ function Loader({logger}) {
                     <Navbar.Brand>
                    
                     <Text b color="inherit">
-                        grow your own story
+                        Grow Your Own Adventure
                     </Text>
                     </Navbar.Brand>
                     <Navbar.Content>
@@ -125,7 +139,7 @@ function Loader({logger}) {
                 </Navbar>   
                 {showLogId && renderLogId()}
                 {!loading && renderFetchStory()}
-                {loading && renderLoading()}
+                {/*loading && renderLoading()*/}
             </div>
     )
 }

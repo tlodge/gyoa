@@ -9,31 +9,25 @@ import { Navbar, Dropdown, Text } from "@nextui-org/react";
 import {format} from '../lib/utils';
 import { AiOutlineAudioMuted, AiOutlineAudio, AiOutlinePauseCircle, AiOutlinePlayCircle } from "react-icons/ai";
 import { useRouter } from 'next/router'
+import Logger from '../lib/logger';
 /*
  * commands that are recognised: "zero" to "nine", "up", "down", "left", "right", "go", "stop", "yes", "no"
  */
 
 let inProgress = {};  //var that is independent of rendering logic!
 
-const logit = ()=>{
-
-}
 function Player(props) {
     
     const {id:storyId} = props;
     const timer = useRef(null);
     const _muted = useRef(null);
     const _listening = useRef(null);
+    const logger = useRef(null);
+
     const db = useRef(null);
 
     const router = useRouter();
-
-  
-
-    //const [model, setModel] = useState(null)
     const [action, setAction] = useState()
-    //const [labels, setLabels] = useState(null)
-
     const [sources, setSources] = useState({});
     const [script, setScript] = useState();
     const [node, setCurrentNode] = useState();
@@ -57,6 +51,18 @@ function Player(props) {
     const [muted, _setMuted] = useState(false);
     const [paused, setPaused] = useState(false);
    
+    const log = (type, data)=>{
+        console.log("logging", type, data);
+        if (!logId){
+            const _logId = localStorage.getItem("loggerId");
+            setLogId(_logId);
+            logger.current.log(_logId, type, data)
+        }else{
+            logger.current.log(logId, type, data)
+        }
+    }
+    
+
     const setDB = (_db)=>{
         db.current = _db;
     }
@@ -72,23 +78,28 @@ function Player(props) {
     }
     
 
+    //TODO - name of episode at top of app
+    //pause inconsistency when jump to scene
+    //more on tracks and track changes??
+    //closing/refreshing app - does this work properly?
+    //logging!
+    //ethics form!
+    //doc to kev
+
     const loadModel = async () =>{
-        console.log("am in load MODEL!!");
+        const _logId = localStorage.getItem("loggerId")
         if (navigator.mediaDevices){
             // start loading model
             const recognizer = await speech.create("BROWSER_FFT") 
-        // check if model is loaded
+            // check if model is loaded
             await recognizer.ensureModelLoaded();
-            // store model instance to state
-            //setModel(recognizer)
-        // store command word list to state
-            const labels = recognizer.wordLabels()
+            const labels = recognizer.wordLabels();
+
             try{
                 recognizer.listen(result=>{
-                    console.log(result ," and muted", _muted.current);
-                    const max = argMax(Object.values(result.scores));
                     const action = labels[argMax(Object.values(result.scores))];
                     if (!_muted.current && _listening.current){
+                        log("speech action", action);
                         setAction(action);
                     }else{
                         setAction("");
@@ -110,13 +121,11 @@ function Player(props) {
         
             request.onsuccess = event => {
                 setDB(event.target.result);  
-                console.log("ok have set db!!");
                 resolve();
                 return; 
             };
         
             request.onerror = event => {
-                console.log("error creating database!");
                 reject();
             };
             
@@ -124,7 +133,6 @@ function Player(props) {
             
                 const _db = event.target.result;
                 setDB(_db);
-                console.log("ok have set db!!");
                 resolve();
                 try{
                     _db.createObjectStore("tracks", { keyPath: "id" });
@@ -137,10 +145,9 @@ function Player(props) {
     }
 
     useEffect(()=>{
-
-        
+       logger.current = new Logger(new Worker('worker.js')); 
+       log("story loaded", storyId);
        
-
        const start = async ()=>{
             await setupstorage();
             load(storyId);
@@ -157,10 +164,7 @@ function Player(props) {
                 const requestWakeLock = async () => {
                 try {
                     wakeLock = await navigator.wakeLock.request();
-                    wakeLock.addEventListener('release', () => {
-                    console.log('Screen Wake Lock released:', wakeLock.released);
-                    });
-                    console.log('Screen Wake Lock released:', wakeLock.released);
+                    /*wakeLock.addEventListener('release', () => {});*/
                 } catch (err) {
                     console.error(`${err.name}, ${err.message}`);
                 }
@@ -171,14 +175,10 @@ function Player(props) {
             }
         }
         getwakelock();
-        const _logId = localStorage.getItem("loggerId")
-        setLogId(_logId);
-
-      
+          
     }, []);
     
 
-  
 
     useEffect(()=>{
         if (script){
@@ -204,34 +204,6 @@ function Player(props) {
         return arr.map((x, i) => [x, i]).reduce((r, a) => (a[0] > r[0] ? a : r))[1];
     }
 
-    /*useEffect (()=>{
-
-        if (!model){
-            return;
-        }
-
-        if (listening){
-            try{
-                model.listen(result=>{
-                    const max = argMax(Object.values(result.scores));
-                    
-                    const action = labels[argMax(Object.values(result.scores))];
-                    if (!muted){
-                        setAction(action);
-                    }
-                }, {includeSpectrogram:true, probabilityThreshold:0.99})
-            }catch(err){
-
-            }
-        }else{
-            try{
-                model.stopListening();
-            }catch(err){
-                console.log("error stopping listening!", err);
-            }
-        }
-    }, [listening, model,muted]);*/
-
     const splitkey = (key, value)=>{
         return key.split(/(\s+)/).reduce((acc, item)=>{
             return {
@@ -256,7 +228,7 @@ function Player(props) {
                             setRemaining(Math.round((finished-passed) / 1000));
                           
                             if (passed == finished){
-                                
+                                    log("scene timeout", `${node.id} ${storyId}`);
                                     nextNode(node.rules[key].toLowerCase());
                                     setAction();
                                     setPlaying(true);
@@ -289,7 +261,7 @@ function Player(props) {
                 for (const a of action.split(" ")){
                     const _a = a.toLowerCase();
                     if (ruleset.indexOf(_a) !== -1){
-                        logit(logId, "action", {storyId,_a});
+                        log("trigger", `${storyId} ${_a}`);
                         setTimeout(()=>{
                             nextNode(rules[_a].toLowerCase());
                             setAction();
@@ -339,16 +311,14 @@ function Player(props) {
 
     const nextNode =  (id)=>{
        
-        logit(logId, "scenechange", {storyId,id});
+        log("scenechange", `${storyId} ${id}`);
         setListening(false);
         const _node = script.find(s=>{
             return s.id == id;
         })
         
-        
         setCurrentNode(_node);
         
-      
         const _tracks =  sources.find(s=>{
             return s.id == _node.id;
         });
@@ -576,6 +546,7 @@ function Player(props) {
             setListening(false);
         }
         setPlaying(true);
+        setPaused(false);
         nextNode(currentKey);
     }
 
@@ -620,13 +591,14 @@ function Player(props) {
     }
 
     const renderNavBar = ()=>{
+        const title = node && node.id ? `${storyId} : ${node.id}` : storyId;
 
         return <>
                 <Navbar isBordered={false} variant="sticky">
                     <Navbar.Brand>
                    
                     <Text b color="inherit">
-                        {storyId}
+                        {title}
                     </Text>
                     </Navbar.Brand>
                     <Navbar.Content activeColor={"red"} >

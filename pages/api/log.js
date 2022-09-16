@@ -5,7 +5,7 @@ export default async (req, res) => {
   const { id, type, data} = req.body;
   const ts = Date.now();
   const log = {ts,id,type,data}
-  
+  console.log(log);
   if (data && id && type){
     const scriptRef = firebase.collection("logs").doc()
     await scriptRef.set(log);

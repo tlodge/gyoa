@@ -26,7 +26,7 @@ export default function Consent(){
                     <Navbar.Brand>
                    
                     <Text b color="inherit">
-                        Grow Your Own Story: consent
+                        Grow Your Own Adventure: consent
                     </Text>
                     </Navbar.Brand>
                     <Navbar.Content activeColor={"red"} >
