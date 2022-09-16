@@ -9,7 +9,6 @@ import { Navbar, Dropdown, Text } from "@nextui-org/react";
 import {format} from '../lib/utils';
 import { AiOutlineAudioMuted, AiOutlineAudio, AiOutlinePauseCircle, AiOutlinePlayCircle } from "react-icons/ai";
 import { useRouter } from 'next/router'
-import { resolve } from 'styled-jsx/css';
 /*
  * commands that are recognised: "zero" to "nine", "up", "down", "left", "right", "go", "stop", "yes", "no"
  */
@@ -23,15 +22,17 @@ function Player(props) {
     
     const {id:storyId} = props;
     const timer = useRef(null);
+    const _muted = useRef(null);
+    const _listening = useRef(null);
     const db = useRef(null);
 
     const router = useRouter();
 
   
 
-    const [model, setModel] = useState(null)
+    //const [model, setModel] = useState(null)
     const [action, setAction] = useState()
-    const [labels, setLabels] = useState(null)
+    //const [labels, setLabels] = useState(null)
 
     const [sources, setSources] = useState({});
     const [script, setScript] = useState();
@@ -40,7 +41,7 @@ function Player(props) {
    
   
     const [tracks, setTracks] = useState([]);
-    const [listening, setListening] = useState(false);
+    const [listening, _setListening] = useState(false);
     const [loading, setLoading] = useState(true);
    
     const [progress, setProgress] = useState("0%");
@@ -61,25 +62,41 @@ function Player(props) {
     }
 
     const setMuted = (value)=>{
-        if (!navigator.mediaDevices){
-            _setMuted(true);
-        }else{
-            _setMuted(value);
-        }
+         _muted.current = value;
+        _setMuted(value);
     }
 
+    const setListening = (value)=>{
+        _listening.current = value;
+        _setListening(value);
+    }
+    
+
     const loadModel = async () =>{
-       
+        console.log("am in load MODEL!!");
         if (navigator.mediaDevices){
             // start loading model
             const recognizer = await speech.create("BROWSER_FFT") 
         // check if model is loaded
             await recognizer.ensureModelLoaded();
             // store model instance to state
-            setModel(recognizer)
+            //setModel(recognizer)
         // store command word list to state
-            setLabels(recognizer.wordLabels())
-            
+            const labels = recognizer.wordLabels()
+            try{
+                recognizer.listen(result=>{
+                    console.log(result ," and muted", _muted.current);
+                    const max = argMax(Object.values(result.scores));
+                    const action = labels[argMax(Object.values(result.scores))];
+                    if (!_muted.current && _listening.current){
+                        setAction(action);
+                    }else{
+                        setAction("");
+                    }
+                }, {includeSpectrogram:true, probabilityThreshold:0.99})
+            }catch(err){
+
+            }
         }else{
             setMuted(true);
         }
@@ -187,7 +204,7 @@ function Player(props) {
         return arr.map((x, i) => [x, i]).reduce((r, a) => (a[0] > r[0] ? a : r))[1];
     }
 
-    useEffect (()=>{
+    /*useEffect (()=>{
 
         if (!model){
             return;
@@ -213,7 +230,7 @@ function Player(props) {
                 console.log("error stopping listening!", err);
             }
         }
-    }, [listening, model,muted]);
+    }, [listening, model,muted]);*/
 
     const splitkey = (key, value)=>{
         return key.split(/(\s+)/).reduce((acc, item)=>{
@@ -445,6 +462,8 @@ function Player(props) {
             }
         });
     }
+
+   
 
     const load = (storyId)=>{
         setLoading(true);
