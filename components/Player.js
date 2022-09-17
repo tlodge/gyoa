@@ -433,7 +433,23 @@ function Player(props) {
         });
     }
 
-   
+    const formatprogress = (percent)=>{
+        if (percent < 20){
+            return `building mountains (${percent}%)`;
+        }
+        if (percent < 40){
+            return `growing forests... (${percent}%)`;
+        }
+        if (percent < 60){
+            return `filling lakes... (${percent}%)`;
+        }
+        if (percent < 80){
+            return `hiring musicians..(${percent}%)`;
+        }
+        if (percent < 100){
+            return `get ready (${percent}%)`;
+        }
+    }
 
     const load = (storyId)=>{
         setLoading(true);
@@ -476,7 +492,7 @@ function Player(props) {
                     const src = await fetchTrack({useCache:havelatest, folder:storyId, id:trackid})
                     resolved.push({id:trackid, src}); 
                     downloaded+=1;
-                    setProgress(`${Math.round(downloaded/tracks * 100)}%`);
+                    setProgress(formatprogress(Math.round(downloaded/tracks * 100)));
                 }
                 sources.push({id, tracks:resolved});
             }
@@ -498,7 +514,7 @@ function Player(props) {
          .catch(err => {
             setLoading(false);
             setProgress("0%");
-            logit(logId, "loaderror", {storyId,err});
+            log("loaderror", `${storyId} ${err}`);
             console.log(err);
          });
     }
@@ -521,10 +537,10 @@ function Player(props) {
     const renderStory = ()=>{
         if (script){
             
-            return <div className={styles.startcontainer} style={{height : node ? 'auto' : "100vh" }}>
+            return <div className={styles.startcontainer} style={{height : node ? 'auto' : "calc(100vh - 80px)" }}>
                
-                {sources.length > 0 && !node && <div onClick={startStory} className={styles.imagecontainer}><img src="../../start.svg" height="200px"/></div>}
-                {sources.length > 0 && !node && <div onClick={startStory} className={styles.progress}>Start</div>}
+                {sources.length > 0 && !node && <div onClick={startStory} className={styles.imagecontainer}><img className={styles.spinning} src="../../start.svg" height="200px"/></div>}
+                {sources.length > 0 && !node && <div onClick={startStory} className={styles.progress}>Let's go</div>}
                 {renderCurrentNode()}       
             </div>
         }
