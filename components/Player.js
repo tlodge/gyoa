@@ -540,7 +540,7 @@ function Player(props) {
             return <div className={styles.startcontainer} style={{height : node ? 'auto' : "calc(100vh - 80px)" }}>
                
                 {sources.length > 0 && !node && <div onClick={startStory} className={styles.imagecontainer}><img className={styles.spinning} src="../../start.svg" height="200px"/></div>}
-                {sources.length > 0 && !node && <div onClick={startStory} className={styles.progress}>Let's go</div>}
+                {sources.length > 0 && !node && <div onClick={startStory} className={styles.progress}>Start!</div>}
                 {renderCurrentNode()}       
             </div>
         }
