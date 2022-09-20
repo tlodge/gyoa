@@ -1,6 +1,6 @@
 .container{
     width: calc(100vw - 0px); /* marging 10px */
-    min-height: 100vh;
+    min-height: calc(100vw - 80px);
     display: flex;
     flex-direction:column;
     align-items: center;
@@ -46,6 +46,7 @@
     align-items:center;
     justify-content:center;    
     flex-direction:row;
+    z-index:10;
 }
 
 .keyword{
@@ -144,11 +145,37 @@
     align-items:center;
     background: #3CA966EE;
     box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
+    z-index:10;
+}
+
+
+.helpcontainer{
+    position:fixed;
+    bottom: 0;
+    width: 100vw; 
+    height: 80px; 
+    display:flex;
+    flex-direction:row;
+    justify-content: center;
+    align-items:center;
+    background: #B7D5F8;
+    box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
 }
 
 .storytext{
     font-size: 1.5em;
     padding: 5px;
+}
+
+.tabbaricon{
+    display: flex;
+    flex-direction: column;
+    color: black;
+    justify-content: center;
+    align-items: center;
+    font-size:1em;
+    font-weight: bold;
+    margin: 15px;
 }
 
 .countdowncontainer{
@@ -164,6 +191,7 @@
     border: 2px solid;
     font-size: 0.6em;
     background: #116833;
+    z-index:10;
 }
 
 .countdown{
@@ -194,6 +222,12 @@
     border: 2px solid white;
 }
 
+
+.credits{
+    max-height: 60vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
 @media (prefers-reduced-motion: no-preference) {
     .spinning {
       animation: image-spin infinite 20s linear;

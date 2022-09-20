@@ -5,9 +5,9 @@ import * as speech from "@tensorflow-models/speech-commands";
 import { MdMic} from "react-icons/md";
 import AudioPlayer from './AudioPlayer';
 import request from 'superagent';
-import { Navbar, Dropdown, Text } from "@nextui-org/react";
+import { Navbar, Dropdown, Text, Modal } from "@nextui-org/react";
 import {format} from '../lib/utils';
-import { AiOutlineAudioMuted, AiOutlineAudio, AiOutlinePauseCircle, AiOutlinePlayCircle } from "react-icons/ai";
+import { AiOutlineAudioMuted, AiOutlineAudio, AiFillQuestionCircle, AiOutlinePauseCircle, AiOutlinePlayCircle, AiOutlineTeam,AiFillHome } from "react-icons/ai";
 import { useRouter } from 'next/router'
 import Logger from '../lib/logger';
 /*
@@ -43,7 +43,7 @@ function Player(props) {
     const [startpressed, setStartPressed] = useState(false);
 
     const [countingDown, setCountingDown] = useState(false);
-    const [remaining, setRemaining] = useState(false);
+    const [remaining, setRemaining] = useState();
     const [waypoints, setWaypoints] = useState([]);
     const [showWaypoints, setShowWaypoints] = useState(false);
     const [logId, setLogId] = useState(false);
@@ -51,6 +51,9 @@ function Player(props) {
     const [muted, _setMuted] = useState(false);
     const [paused, setPaused] = useState(false);
    
+    const [showhelp, setShowHelp] = useState(false);
+    const [showcredits, setShowCredits] = useState(false);
+
     const log = (type, data)=>{
         console.log("logging", type, data);
         if (!logId){
@@ -62,6 +65,10 @@ function Player(props) {
         }
     }
     
+
+    const goHome = ()=>{
+        router.push("/");
+    }
 
     const setDB = (_db)=>{
         db.current = _db;
@@ -220,15 +227,15 @@ function Player(props) {
         if (!playing && node){
             Object.keys(node.rules).forEach((key)=>{
                 const _key = key.trim();
+                
                 if (!isNaN(_key)){
                   
                     const setCountdown = (passed=0, finished)=>{
                         
                             
                             setRemaining(Math.round((finished-passed) / 1000));
-                          
+                            console.log("--->", Math.round((finished-passed) / 1000));
                             if (passed == finished){
-                                    log("scene timeout", `${node.id} ${storyId}`);
                                     nextNode(node.rules[key].toLowerCase());
                                     setAction();
                                     setPlaying(true);
@@ -248,6 +255,7 @@ function Player(props) {
 
     useEffect(()=>{
         if (node){
+            
             const rules = Object.keys(node.rules).reduce((acc,key)=>{
                 return {
                     ...acc,
@@ -258,18 +266,21 @@ function Player(props) {
             const ruleset = Object.keys(rules);
             
             if (action){
-                for (const a of action.split(" ")){
-                    const _a = a.toLowerCase();
-                    if (ruleset.indexOf(_a) !== -1){
-                        log("trigger", `${storyId} ${_a}`);
-                        setTimeout(()=>{
-                            nextNode(rules[_a].toLowerCase());
-                            setAction();
-                            setListening(false);
-                            setPlaying(true);
-                        },500);
+                
+                    for (const a of action.split(" ")){
+                        const _a = a.toLowerCase();
+                       
+                        if (ruleset.indexOf(_a) !== -1){
+                            log("trigger", `${storyId} ${_a}`);
+                            setTimeout(()=>{
+                                nextNode(rules[_a].toLowerCase());
+                                setAction();
+                                setListening(false);
+                                setPlaying(true);
+                            },500);
+                        }
                     }
-                }
+                
             }
         }     
     },[action, playing]);
@@ -310,8 +321,13 @@ function Player(props) {
     }
 
     const nextNode =  (id)=>{
-       
+        console.log("seeen next node!!", id);
         log("scenechange", `${storyId} ${id}`);
+
+        if (id.toLowerCase() === "restart"){
+            goHome();
+        }
+
         setListening(false);
         const _node = script.find(s=>{
             return s.id == id;
@@ -454,7 +470,7 @@ function Player(props) {
     const load = (storyId)=>{
         setLoading(true);
         if (!storyId){
-            router.push("/");
+            goHome();
         }
         
 
@@ -641,6 +657,64 @@ function Player(props) {
             {renderCountdown()}
         </>
     }
+
+    const renderHelpMenu = ()=>{
+        return <div className={styles.helpcontainer}> 
+       
+                <div onClick={goHome} className={styles.tabbaricon}>
+                    <AiFillHome/>
+                    home
+                </div>
+                <div onClick={()=>setShowHelp(true)} className={styles.tabbaricon}>
+                    <AiFillQuestionCircle/>
+                    help
+                </div>
+
+                <div onClick={()=>setShowCredits(true)} className={styles.tabbaricon}>
+                    <AiOutlineTeam/>
+                    credits
+                </div>
+        </div>
+    }
+
+    const renderHelp = ()=>{
+          return  <Modal
+            closeButton
+            aria-labelledby="modal-title"
+            open={showhelp}
+            onClose={()=>setShowHelp(false)}
+        >
+            <Modal.Header>
+            <Text id="modal-title" size={16}>
+               <Text b size={16}>Grow Your Own Adventure. Help!</Text>
+            </Text>
+            </Modal.Header>
+            <Modal.Body>
+              <img src="../help.png"/>
+            </Modal.Body>
+        </Modal>
+    }
+
+
+    const renderCredits = ()=>{
+        return  <Modal
+          closeButton
+          aria-labelledby="modal-title"
+          open={showcredits}
+          onClose={()=>setShowCredits(false)}
+      >
+          <Modal.Header>
+          <Text id="modal-title" size={18}>
+            <Text b size={16}>Grow Your Own Adventure. Credits.</Text>
+          </Text>
+          </Modal.Header>
+          <Modal.Body className={styles.credits}>
+            
+                <Text b size={16}>Writer <Text size={16}>Matt Beames</Text></Text>
+    
+          </Modal.Body>
+      </Modal>
+  }
     return (
         <div className={styles.container}>
             {renderAudioPlayers()}
@@ -648,6 +722,9 @@ function Player(props) {
             {renderLoading()}
             {renderStory()}
             {listening && startpressed && renderResponses()}
+            {renderHelpMenu()}
+            {renderHelp()}
+            {renderCredits()}
         </div>
     )
 }
