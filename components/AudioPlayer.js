@@ -1,5 +1,7 @@
 import {useEffect, useState, useRef} from 'react';
 
+
+
 function AudioPlayer({src, onFinish, play, paused}) {
     
    const playerRef = useRef();
@@ -19,6 +21,15 @@ function AudioPlayer({src, onFinish, play, paused}) {
         
         if(play){
             setInitialised(true);
+            const audioCtx = new AudioContext();
+            const myAudio = playerRef.current;
+            
+            const source = audioCtx.createMediaElementSource(myAudio);
+            const gainNode = audioCtx.createGain();
+            gainNode.gain.value = 20;
+            source.connect(gainNode);
+            
+            gainNode.connect(audioCtx.destination)
             playerRef.current.src = src;   
             playerRef.current.play();
             playerRef.current.onended = ()=>{
@@ -30,7 +41,7 @@ function AudioPlayer({src, onFinish, play, paused}) {
     
 
     return (
-        <audio src={src}  ref={playerRef} style={{display:"none"}} controls="controls" />
+        <audio src={src}  ref={playerRef} style={{display:"none"}} />
     )
 }
 
