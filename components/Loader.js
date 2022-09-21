@@ -12,7 +12,7 @@ function Loader() {
 
     const logger = useRef(null); 
     const router = useRouter();
-    const [variants, setVariants] = useState([{icon:"story.svg", label: `Listen to`, id:"silverquest"},{icon:"explore.svg", label: `Explore`, id:"silverquest-explore"} ]);
+    const [variants, setVariants] = useState([{icon:"story.png", label: `Listen to`, id:"silverquest"},{icon:"explore.png", label: `Explore`, id:"silverquest-explore"} ]);
     const [scriptName, setScriptName] = useState("");
     const [showLogId, setShowLogId] = useState(false);
     const [logId, setLogId]= useState();

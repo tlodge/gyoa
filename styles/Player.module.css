@@ -9,6 +9,7 @@
     z-index: 2;
     background: #0087FF;
     color: white;
+    margin-bottom: 80px;
 }
 
 .uploadcontainer{
@@ -128,10 +129,23 @@
     width: 100%;
     padding: 10px;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
-    margin:10px;
+    margin-top: 60px;
     overflow-y: auto;
+}
+
+.storytitle{
+    position: fixed;
+    display: flex;
+    align-items:center;
+    justify-content: center;
+    width: 100vw;
+    height: 60px;
+    background: #0B74D8;
+    top: 76px;
+    z-index: 100;
 }
 
 .listeningcontainer{

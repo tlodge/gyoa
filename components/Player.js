@@ -7,7 +7,7 @@ import AudioPlayer from './AudioPlayer';
 import request from 'superagent';
 import { Navbar, Dropdown, Text, Modal } from "@nextui-org/react";
 import {format} from '../lib/utils';
-import { AiOutlineAudioMuted, AiOutlineAudio, AiFillQuestionCircle, AiOutlinePauseCircle, AiOutlinePlayCircle, AiOutlineTeam,AiFillHome } from "react-icons/ai";
+import { AiOutlineAudioMuted, AiOutlineAudio, AiFillSound, AiOutlineSound, AiFillQuestionCircle, AiOutlinePauseCircle, AiOutlinePlayCircle, AiOutlineTeam,AiFillHome } from "react-icons/ai";
 import { useRouter } from 'next/router'
 import Logger from '../lib/logger';
 /*
@@ -53,6 +53,8 @@ function Player(props) {
    
     const [showhelp, setShowHelp] = useState(false);
     const [showcredits, setShowCredits] = useState(false);
+
+    const [loud, setLoud] = useState(false);
 
     const log = (type, data)=>{
         console.log("logging", type, data);
@@ -316,7 +318,7 @@ function Player(props) {
     
         return (tracks||[]).map((t,i)=>{
 
-            return <AudioPlayer key={i} src={t.src} paused={paused} play={startpressed} onFinish={()=>onFinish(i)}/>
+            return <AudioPlayer loud={loud} key={i} src={t.src} paused={paused} play={startpressed} onFinish={()=>onFinish(i)}/>
         });
     }
 
@@ -359,8 +361,11 @@ function Player(props) {
     }
 
     const renderCurrentNode = ()=>{
+        const title = node && node.id ? `${storyId} : ${node.id}` : storyId;
+
         return  <div>
                     {node && <div className={styles.storytextcontainer}>
+                        <div className={styles.storytitle}>{title}</div>
                         <div className={styles.storytext}>{format(node.text)}</div>
                     </div>}
                     
@@ -501,8 +506,44 @@ function Player(props) {
             },0);
     
             let downloaded = 0;
+            let tasks = [], resolved = {};
 
             for (const id of Object.keys(trackstodownload)){
+
+                tasks = [...tasks,  ...trackstodownload[id].map((trackid)=>{
+                    return new Promise(async (resolve, reject)=>{
+                        const src = await fetchTrack({useCache:havelatest, folder:storyId, id:trackid});
+                        resolved[id] = resolved[id] || [];
+                        resolved[id].push({id:trackid, src}); 
+                        downloaded+=1;
+                        setProgress(formatprogress(Math.round(downloaded/tracks * 100)));
+                        resolve();
+                    });
+                })];
+                 
+               
+            }
+            
+            Promise.all(tasks).then(()=>{
+                Object.keys(resolved).map((id)=>{
+                    sources.push({id, tracks:resolved[id]})
+                });
+                setSources(sources);
+                localStorage.setItem(`${storyId}-ts`, ts);
+                const _script = script.map(s=>({...s, id:s.id.toLowerCase()}));
+                setScript(_script);
+                const startnode = sources.find(s=>s.id==_script[0].id);
+                
+                if (startnode && startnode.tracks){
+                    setTracks(startnode.tracks);
+                }
+               
+                setLoading(false);
+            });
+
+
+
+            /*for (const id of Object.keys(trackstodownload)){
                 const resolved = [];    
                 for (const trackid of trackstodownload[id]){
                     const src = await fetchTrack({useCache:havelatest, folder:storyId, id:trackid})
@@ -525,7 +566,7 @@ function Player(props) {
                 setTracks(startnode.tracks);
             }
            
-            setLoading(false);
+            setLoading(false);*/
         })
          .catch(err => {
             setLoading(false);
@@ -555,7 +596,7 @@ function Player(props) {
             
             return <div className={styles.startcontainer} style={{height : node ? 'auto' : "calc(100vh - 80px)" }}>
                
-                {sources.length > 0 && !node && <div onClick={startStory} className={styles.imagecontainer}><img className={styles.spinning} src="../../start.svg" height="200px"/></div>}
+                {sources.length > 0 && !node && <div onClick={startStory} className={styles.imagecontainer}><img className={styles.spinning} src="../../start.png" width="200px" /></div>}
                 {sources.length > 0 && !node && <div onClick={startStory} className={styles.progress}>Start!</div>}
                 {renderCurrentNode()}       
             </div>
@@ -613,6 +654,15 @@ function Player(props) {
         }
     }
 
+    const renderLoudness = ()=>{
+        if(startpressed){
+            if (loud){
+                return <div onClick={()=>setLoud(!loud)} className={styles.navbaricon}><AiFillSound/></div>
+            }
+            return <div onClick={()=>setLoud(!loud)} className={styles.navbaricon}><AiOutlineSound/></div>
+        }
+    }
+    
     const renderPaused = ()=>{
         if(startpressed){
             if (paused){
@@ -623,25 +673,28 @@ function Player(props) {
     }
 
     const renderNavBar = ()=>{
-        const title = node && node.id ? `${storyId} : ${node.id}` : storyId;
-
+       
         return <>
                 <Navbar isBordered={false} variant="sticky">
                     <Navbar.Brand>
                    
-                    <Text b color="inherit">
-                        {title}
-                    </Text>
+                    
+                        {renderWaypoints()}
+                   
                     </Navbar.Brand>
                     <Navbar.Content activeColor={"red"} >
                           
-                        {renderWaypoints()}
+                       
+                        <Navbar.Link>
+                            {renderLoudness()}
+                        </Navbar.Link>
                         <Navbar.Link>
                            {renderPaused()}
                         </Navbar.Link>
                         <Navbar.Link>
                            {renderMuted()}
                         </Navbar.Link>
+                    
                     </Navbar.Content>
                    
                 </Navbar>
