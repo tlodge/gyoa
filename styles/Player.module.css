@@ -1,6 +1,6 @@
 .container{
     width: calc(100vw - 0px); /* marging 10px */
-    min-height: calc(100vw - 80px);
+    min-height: calc(100vh - 80px);
     display: flex;
     flex-direction:column;
     align-items: center;

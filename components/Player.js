@@ -10,6 +10,8 @@ import {format} from '../lib/utils';
 import { AiOutlineAudioMuted, AiOutlineAudio, AiFillSound, AiOutlineSound, AiFillQuestionCircle, AiOutlinePauseCircle, AiOutlinePlayCircle, AiOutlineTeam,AiFillHome } from "react-icons/ai";
 import { useRouter } from 'next/router'
 import Logger from '../lib/logger';
+import appname from '../lib/appname';
+
 /*
  * commands that are recognised: "zero" to "nine", "up", "down", "left", "right", "go", "stop", "yes", "no"
  */
@@ -95,15 +97,6 @@ function Player(props) {
         _listening.current = value;
         _setListening(value);
     }
-    
-
-    //TODO - name of episode at top of app
-    //pause inconsistency when jump to scene
-    //more on tracks and track changes??
-    //closing/refreshing app - does this work properly?
-    //logging!
-    //ethics form!
-    //doc to kev
 
     const loadModel = async () =>{
         const _logId = localStorage.getItem("loggerId")
@@ -123,7 +116,7 @@ function Player(props) {
                     }else{
                         setAction("");
                     }
-                }, {includeSpectrogram:true, probabilityThreshold:0.99})
+                }, {includeSpectrogram:true, probabilityThreshold:0.95})
             }catch(err){
 
             }
@@ -333,7 +326,13 @@ function Player(props) {
     }
 
     const nextNode =  (id)=>{
-       
+        try{
+            clearTimeout(timer.current);
+            setCountingDown(false);
+        }catch(err){
+            console.log(err);
+        }
+
         log("scenechange", `${storyId} ${id}`);
 
         if (id.toLowerCase() === "restart"){
@@ -694,7 +693,7 @@ function Player(props) {
                 <Navbar isBordered={false} variant="sticky">
                     <Navbar.Brand>
                    
-                    
+                        {!startpressed && appname()}
                         {renderWaypoints()}
                    
                     </Navbar.Brand>
