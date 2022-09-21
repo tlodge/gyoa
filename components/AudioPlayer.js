@@ -18,18 +18,22 @@ function AudioPlayer({src, onFinish, play, paused}) {
    },[paused]);
 
     useEffect(()=>{
+        const audioCtx = new AudioContext();
+        const myAudio = playerRef.current;
+        
+        const source = audioCtx.createMediaElementSource(myAudio);
+        const gainNode = audioCtx.createGain();
+        gainNode.gain.value = 10;
+        source.connect(gainNode);
+        
+        gainNode.connect(audioCtx.destination)
+    },[]);
+
+    useEffect(()=>{
         
         if(play){
             setInitialised(true);
-            const audioCtx = new AudioContext();
-            const myAudio = playerRef.current;
-            
-            const source = audioCtx.createMediaElementSource(myAudio);
-            const gainNode = audioCtx.createGain();
-            gainNode.gain.value = 20;
-            source.connect(gainNode);
-            
-            gainNode.connect(audioCtx.destination)
+           
             playerRef.current.src = src;   
             playerRef.current.play();
             playerRef.current.onended = ()=>{
