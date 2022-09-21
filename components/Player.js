@@ -54,7 +54,7 @@ function Player(props) {
     const [showhelp, setShowHelp] = useState(false);
     const [showcredits, setShowCredits] = useState(false);
 
-    const [loud, setLoud] = useState(false);
+    const [loud, _setLoud] = useState(false);
 
     const log = (type, data)=>{
         console.log("logging", type, data);
@@ -67,6 +67,15 @@ function Player(props) {
         }
     }
     
+    const setLoud = (value)=>{
+        _setLoud(value);
+        log("loudness", `${storyId} ${node.id} ${value}`);
+    }
+
+    const manualPaused = (value)=>{
+        setPaused(value);
+        log("paused", `${storyId} ${node.id} ${value}`);
+    }
 
     const goHome = ()=>{
         router.push("/");
@@ -79,6 +88,7 @@ function Player(props) {
     const setMuted = (value)=>{
          _muted.current = value;
         _setMuted(value);
+        log("muted", `${storyId} ${node.id} ${value}`);
     }
 
     const setListening = (value)=>{
@@ -323,7 +333,7 @@ function Player(props) {
     }
 
     const nextNode =  (id)=>{
-        console.log("seeen next node!!", id);
+       
         log("scenechange", `${storyId} ${id}`);
 
         if (id.toLowerCase() === "restart"){
@@ -345,12 +355,17 @@ function Player(props) {
         setTracks(newTracks || []);
     }
 
+    const manualTrigger = (key)=>{
+        setAction(key.toLocaleLowerCase());
+        log("manualpress", `${storyId} ${node.id} ${key}`);
+    }
+
     const renderChoices = ()=>{
         const rules = (node || {}).rules || [];
-
+       
         const tags = Object.keys(rules).map((key)=>{
             if (isNaN(key)){
-                return <div  className={styles.keyword} style={{color: key.toLowerCase()==action ? "#01ABB3" : "#7ED8A1"}} key={key} onClick={()=>setAction(key.toLocaleLowerCase())}>{key}</div>
+                return <div  className={styles.keyword} style={{color: key.toLowerCase()==action ? "#01ABB3" : "#7ED8A1"}} key={key} onClick={()=>manualTrigger(key)}>{key}</div>
             }
         });
 
@@ -580,7 +595,7 @@ function Player(props) {
         if (loading){
             return <div className={styles.loadingcontainer}>
                          <div className={styles.imagerow}>
-                                <div className={styles.progress}>nearly there...</div>
+                                <div className={styles.progress}>just loading..</div>
                                 <div className={styles.imagecontainer}>
                                     <img src="../../logo.svg" height="200px"/>
                                 </div>
@@ -613,6 +628,7 @@ function Player(props) {
     }
 
     const setSelected = ({currentKey})=>{
+        log("waypointselected",`${storyId} ${currentKey}`);
         clearTimeout(timer.current);
         setCountingDown(false);
         if (listening){
@@ -666,9 +682,9 @@ function Player(props) {
     const renderPaused = ()=>{
         if(startpressed){
             if (paused){
-                return <div onClick={()=>setPaused(!paused)} className={styles.navbaricon}><AiOutlinePlayCircle/></div>
+                return <div onClick={()=>manualPaused(!paused)} className={styles.navbaricon}><AiOutlinePlayCircle/></div>
             }
-            return <div onClick={()=>setPaused(!paused)} className={styles.navbaricon}><AiOutlinePauseCircle/></div>
+            return <div onClick={()=>manualPaused(!paused)} className={styles.navbaricon}><AiOutlinePauseCircle/></div>
         }
     }
 

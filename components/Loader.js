@@ -4,6 +4,7 @@ import { Button, Spacer,  Navbar, Text, StyledLoading } from '@nextui-org/react'
 import {useEffect, useState, useRef} from 'react';
 import { useRouter} from 'next/router'
 import Logger from '../lib/logger';
+import appname from '../lib/appname';
 
 
 const about = `Welcome to the Grow your Own Story app.  We are nearly there!  You just need to provide us with the name of the story you'd like to explore!`
@@ -19,7 +20,6 @@ function Loader() {
     const [loading, setLoading] = useState(false);
 
     const log = (type, data)=>{
-        console.log("logging", type, data);
         if (!logId){
             const _logId = localStorage.getItem("loggerId");
             setLogId(_logId);
@@ -32,7 +32,12 @@ function Loader() {
     useEffect(()=>{
        
         logger.current = new Logger(new Worker('worker.js'));
-        log("app init", "");
+        try{
+            const ua = navigator.userAgent;
+            log("app init", JSON.stringify(ua));
+        }catch(err){
+            log("app init","");
+        }
     },[]);
 
     const scriptChangeHandler = (event) => {
@@ -45,6 +50,7 @@ function Loader() {
         setLoading(true);
         router.push(`/story/${id}`); 
     }
+
 
     const renderVariants = ()=>{
         const _renderLabel = (label, id)=>{
@@ -128,7 +134,7 @@ function Loader() {
                     <Navbar.Brand>
                    
                     <Text b color="inherit">
-                        Grow Your Own Adventure
+                        {appname()}
                     </Text>
                     </Navbar.Brand>
                     <Navbar.Content>

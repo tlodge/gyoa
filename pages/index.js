@@ -9,7 +9,7 @@ export default function Home(){
 
   useEffect(()=>{
     const consented = localStorage.getItem("consent");
-    console.log("consented", consented);
+    
     if (!consented){
       router.push("/consent");
     }

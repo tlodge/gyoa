@@ -2,6 +2,7 @@ import styles from '../../styles/Consent.module.css'
 import { useRouter } from 'next/router'
 import { Switch, Card, Navbar, Text, Spacer, Radio} from '@nextui-org/react';
 import {uniqueid} from '../../lib/utils';
+import appname from '../../lib/appname';
 
 const about = `A research team at Nottingham University is exploring the potential of sound and speech recognition in apps to support active play and storytelling between parents and children. We have created this prototype app that runs a voice-based experience that is similar to a choose-your-own-adventure book.`
 
@@ -26,7 +27,7 @@ export default function Consent(){
                     <Navbar.Brand>
                    
                     <Text b color="inherit">
-                        Grow Your Own Adventure: consent
+                        {`${appname()}: consent`}
                     </Text>
                     </Navbar.Brand>
                     <Navbar.Content activeColor={"red"} >
