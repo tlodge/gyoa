@@ -545,8 +545,15 @@ function Player(props) {
                 setSources(sources);
                 localStorage.setItem(`${storyId}-ts`, ts);
                 const _script = script.map(s=>({...s, id:s.id.toLowerCase()}));
+
+                const startid = _script.find(s=>s.start===true);
+                let {id:sid} = startid || {}; 
+                sid = sid || _script[0].id;
+                console.log("sid is", sid);
                 setScript(_script);
-                const startnode = sources.find(s=>s.id==_script[0].id);
+
+
+                const startnode = sources.find(s=>s.id==sid);
                 
                 if (startnode && startnode.tracks){
                     setTracks(startnode.tracks);
