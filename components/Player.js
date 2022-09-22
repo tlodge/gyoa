@@ -69,6 +69,12 @@ function Player(props) {
         }
     }
     
+
+    function playPing() {
+        const audio = new Audio("../../ping.mp3");
+        audio.play();
+    }
+
     const setLoud = (value)=>{
         _setLoud(value);
         log("loudness", `${storyId} ${node.id} ${value}`);
@@ -88,6 +94,7 @@ function Player(props) {
     }
 
     const setMuted = (value)=>{
+        
          _muted.current = value;
         _setMuted(value);
         log("muted", `${storyId} ${node.id} ${value}`);
@@ -276,6 +283,7 @@ function Player(props) {
                         const _a = a.toLowerCase();
                        
                         if (ruleset.indexOf(_a) !== -1){
+                            playPing();
                             log("trigger", `${storyId} ${_a}`);
                             setTimeout(()=>{
                                 nextNode(rules[_a].toLowerCase());
