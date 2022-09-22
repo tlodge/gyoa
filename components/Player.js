@@ -8,6 +8,8 @@ import request from 'superagent';
 import { Navbar, Dropdown, Text, Modal } from "@nextui-org/react";
 import {format} from '../lib/utils';
 import { AiOutlineAudioMuted, AiOutlineAudio, AiFillSound, AiOutlineSound, AiFillQuestionCircle, AiOutlinePauseCircle, AiOutlinePlayCircle, AiOutlineTeam,AiFillHome } from "react-icons/ai";
+import { ImSad } from "react-icons/im";
+
 import { useRouter } from 'next/router'
 import Logger from '../lib/logger';
 import appname from '../lib/appname';
@@ -56,8 +58,12 @@ function Player(props) {
    
     const [showhelp, setShowHelp] = useState(false);
     const [showcredits, setShowCredits] = useState(false);
+    const [showtechhelp, setShowTechHelp] = useState(false);
 
     const [loud, _setLoud] = useState(false);
+
+    const [isCountdownRule, setIsCountdownRule] = useState(false);
+    const [isSpeechRule, setIsSpeechRule] = useState(false);
 
     const log = (type, data)=>{
         console.log("logging", type, data);
@@ -239,6 +245,21 @@ function Player(props) {
     }
 
     useEffect(()=>{
+        if (node && node.rules){
+
+            const _iscountdownrule = Object.keys(node.rules).reduce((acc, key)=>{
+                return acc || !isNaN(key.trim());
+            },false);
+            
+            setIsCountdownRule(_iscountdownrule);
+
+            const _isspeechrule = Object.keys(node.rules).reduce((acc, key)=>{
+                return acc || isNaN(key.trim());
+            },false);
+
+            setIsSpeechRule(_isspeechrule);
+        }
+
         if (!playing && node){
             Object.keys(node.rules).forEach((key)=>{
                 const _key = key.trim();
@@ -354,6 +375,9 @@ function Player(props) {
         }
 
         setListening(false);
+
+        
+
         const _node = script.find(s=>{
             return s.id == id;
         })
@@ -383,7 +407,14 @@ function Player(props) {
         });
 
         if  (!playing && node && node.rules){ 
-            return <div className={styles.keywordcontainer}>{tags}</div>
+             //speech and countdown
+            let keybottom = 160;
+        
+            if(!isCountdownRule && isSpeechRule){ //speech and no countdown
+                keybottom = 100;
+            }
+
+            return <div className={styles.keywordcontainer} style={{bottom:keybottom}}>{tags}</div>
         }
         
     }
@@ -401,7 +432,14 @@ function Player(props) {
     }
 
     const renderMic = ()=>{
-        return <div className={styles.micontainer}>
+      
+        let micbottom = 210;
+       
+
+        if (!isCountdownRule){
+            micbottom = 150;
+        }
+        return <div className={styles.micontainer} style={{bottom:micbottom}}>
                     <div className={styles.listening}>
                         <MdMic/>
                     </div>
@@ -414,11 +452,24 @@ function Player(props) {
             return <></>
         }
 
-        return <div className={styles.listeningcontainer}> 
-                    {listening && node && renderMic()}
-                    <div className={styles.heard}>
+        //speech and countdown
+        let listenheight = 240;
+        let heardbottom = 200;
+
+        if (isCountdownRule){  //countdown
+            if (!isSpeechRule){ //countdown and no speech
+                listenheight = 80;
+            }
+        }else if(isSpeechRule){ //speech and no countdown
+            listenheight = 180;
+            heardbottom = 140;
+        }
+       
+        return <div className={styles.listeningcontainer} style={{height : listenheight }}> 
+                    {listening && node && isSpeechRule && renderMic()}
+                    {isSpeechRule && <div className={styles.heard} style={{bottom:heardbottom}}>
                         {listening && action && node && <div>{`"${action}"`}</div>}
-                    </div>
+                    </div>}
                 </div>
     }
 
@@ -724,8 +775,6 @@ function Player(props) {
                    
                     </Navbar.Brand>
                     <Navbar.Content activeColor={"red"} >
-                          
-                       
                         <Navbar.Link>
                             {renderLoudness()}
                         </Navbar.Link>
@@ -735,7 +784,6 @@ function Player(props) {
                         <Navbar.Link>
                            {renderMuted()}
                         </Navbar.Link>
-                    
                     </Navbar.Content>
                    
                 </Navbar>
@@ -768,6 +816,11 @@ function Player(props) {
                     <AiOutlineTeam/>
                     credits
                 </div>
+                <div onClick={()=>setShowTechHelp(true)} className={styles.tabbaricon}>
+                    <ImSad/>
+                    not working!
+                </div>
+
         </div>
     }
 
@@ -780,7 +833,7 @@ function Player(props) {
         >
             <Modal.Header>
             <Text id="modal-title" size={16}>
-               <Text b size={16}>Grow Your Own Adventure. Help!</Text>
+               <Text b size={16}>{`${appname()} Help!`}</Text>
             </Text>
             </Modal.Header>
             <Modal.Body>
@@ -799,13 +852,38 @@ function Player(props) {
       >
           <Modal.Header>
           <Text id="modal-title" size={18}>
-            <Text b size={16}>Grow Your Own Adventure. Credits.</Text>
+            <Text b size={16}>{`${appname()}: Credits`}</Text>
           </Text>
           </Modal.Header>
           <Modal.Body className={styles.credits}>
             
                 <Text b size={16}>Writer <Text size={16}>Matt Beames</Text></Text>
     
+          </Modal.Body>
+      </Modal>
+    }
+
+    const renderTechHelp = ()=>{
+        return  <Modal
+          closeButton
+          aria-labelledby="modal-title"
+          open={showtechhelp}
+          onClose={()=>setShowTechHelp(false)}
+      >
+          <Modal.Header>
+          <Text id="modal-title" size={18}>
+                <Text b size={16}>{`${appname()}: Not working!`}</Text>
+          </Text>
+          </Modal.Header>
+          <Modal.Body className={styles.credits}>
+                <Text size={16}>First of all.  Apologies!  This is a prototype app and will inevitably not work quite as smoothly as we'd like. Here is a list of potential problems.  However before you spend too much time fiddling with settings, if possible,  it might be worth trying a different device or browser (Chrome/Safari?) first, to see if the problem goes away.</Text>
+                <Text b size={16}>It doesn't hear me!</Text>
+                <Text size={16}> First, check that the app prompted you to use your microphone. If it did and you accepted you should see a little microphone icon in your browser address bar.  If not, it may be that the microphone is not supported on your device.</Text>
+                <Text size={16}>We have found that voice recognition is better on some devices than on others.  Can you try it on another device or phone?</Text>
+                <Text size={16}> We have also found some words are more easily recognised that others. 'No' can be a problem. Try lengthening the word as you say it to see if you get better results</Text>
+                <Text size={16}> If all else fails, you can simply click on the word that the app is expecting, to move on to the next scene.</Text>
+                <Text b size={16}>It doesn't play anything</Text>
+                <Text size={16}>Hmmm. Assuming your volume controls are working, it might be because your device doesn't recognise the sound format (mp3) of the audio tracks.  Could you try a different device or phone to see if you have any more luck? </Text>
           </Modal.Body>
       </Modal>
   }
@@ -819,6 +897,7 @@ function Player(props) {
             {renderHelpMenu()}
             {renderHelp()}
             {renderCredits()}
+            {renderTechHelp()}
             <audio src={"../../ping.mp3"}  ref={pingRef} style={{display:"none"}} />
         </div>
     )

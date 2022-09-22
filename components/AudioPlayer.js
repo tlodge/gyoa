@@ -51,6 +51,9 @@ function AudioPlayer({src, onFinish, play, paused, loud}) {
             playerRef.current.onended = ()=>{
                 onFinish();
             };
+            playerRef.current.onerror = ()=>{
+                onFinish();
+            };
         }
     },[play, src]);
    
