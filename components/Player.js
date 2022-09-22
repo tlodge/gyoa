@@ -876,14 +876,14 @@ function Player(props) {
           </Text>
           </Modal.Header>
           <Modal.Body className={styles.credits}>
-                <Text size={16}>First of all.  Apologies!  This is a prototype app and will inevitably not work quite as smoothly as we'd like. Here is a list of potential problems.  However before you spend too much time fiddling with settings, if possible,  it might be worth trying a different device or browser (Chrome/Safari?) first, to see if the problem goes away.</Text>
-                <Text b size={16}>It doesn't hear me!</Text>
+                <Text size={16}>First of all.  Apologies!  This is a prototype app and will inevitably not work quite as smoothly as we would like. Here is a list of potential problems.  However before you spend too much time fiddling with settings, if possible, it might be worth trying a different device or browser (Chrome/Safari?) first, to see if the problem goes away.</Text>
+                <Text b size={16}>It does not hear me!</Text>
                 <Text size={16}> First, check that the app prompted you to use your microphone. If it did and you accepted you should see a little microphone icon in your browser address bar.  If not, it may be that the microphone is not supported on your device.</Text>
                 <Text size={16}>We have found that voice recognition is better on some devices than on others.  Can you try it on another device or phone?</Text>
-                <Text size={16}> We have also found some words are more easily recognised that others. 'No' can be a problem. Try lengthening the word as you say it to see if you get better results</Text>
+                <Text size={16}> We have also found some words are more easily recognised that others. No can be a problem. Try lengthening the word as you say it to see if you get better results</Text>
                 <Text size={16}> If all else fails, you can simply click on the word that the app is expecting, to move on to the next scene.</Text>
-                <Text b size={16}>It doesn't play anything</Text>
-                <Text size={16}>Hmmm. Assuming your volume controls are working, it might be because your device doesn't recognise the sound format (mp3) of the audio tracks.  Could you try a different device or phone to see if you have any more luck? </Text>
+                <Text b size={16}>It does not play anything</Text>
+                <Text size={16}>Hmmm. Assuming your volume controls are working, it might be because your device does not recognise the sound format (mp3) of the audio tracks.  Could you try a different device or phone to see if you have any more luck? </Text>
           </Modal.Body>
       </Modal>
   }
