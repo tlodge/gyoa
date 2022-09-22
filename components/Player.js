@@ -618,7 +618,7 @@ function Player(props) {
     const renderStory = ()=>{
         if (script){
             
-            return <div className={styles.startcontainer} style={{height : node ? 'auto' : "calc(100vh - 80px)" }}>
+            return <div className={styles.startcontainer} style={{height : node ? 'auto' : "calc(100vh - 160px)" }}>
                
                 {sources.length > 0 && !node && <div onClick={startStory} className={styles.imagecontainer}><img className={styles.spinning} src="../../start.png" width="200px" /></div>}
                 {sources.length > 0 && !node && <div onClick={startStory} className={styles.progress}>Start!</div>}

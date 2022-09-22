@@ -112,7 +112,7 @@
 .loadingcontainer{
     display: flex;
     width: 100vw;
-    height: 100vh;
+    height: calc(100vh - 160px);
     justify-content: center;
     align-items:center;
 }
