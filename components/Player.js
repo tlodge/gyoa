@@ -444,12 +444,15 @@ function Player(props) {
        return new Promise(async (resolve, reject)=>{
          if (useCache){
             const cached = await fetchFromCache(id);
-            if (cached.trim() !== ""){
-                console.log("succesfully retrieved track from cache");
-                resolve(cached);
-                return;
+            if (cached){
+                if (cached.trim() !== ""){
+                    console.log("succesfully retrieved track from cache");
+                    resolve(cached);
+                    return;
+                }
             }
          }
+         console.log("re-fetching from server!");
          const src = await fetchFromServer({folder, id});
          resolve(src); 
        })
