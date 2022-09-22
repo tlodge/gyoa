@@ -308,7 +308,9 @@ function Player(props) {
             setListening(false);
         }
         
-        let _node = script[0];
+        const  _node = script.find(s=>s.start===true) || script[0];
+       
+        
         setCurrentNode(_node);
         setPlaying(true);
         setStartPressed(true);
@@ -570,6 +572,8 @@ function Player(props) {
 
                 const startnode = sources.find(s=>s.id==sid);
                 
+                console.log("OK START NODE IS", startnode);
+
                 if (startnode && startnode.tracks){
                     setTracks(startnode.tracks);
                 }
