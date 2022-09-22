@@ -41,7 +41,7 @@
 
 .keywordcontainer{
     position: fixed;
-    bottom: 80px;
+    bottom: 160px;
     display:flex;
     width: calc(100vw - 20px); 
     align-items:center;
@@ -58,7 +58,7 @@
 
 .micontainer{
     position: fixed;
-    bottom: 130px;
+    bottom: 210px;
     display:flex;
     align-items:center;
     justify-content:center;
@@ -71,7 +71,7 @@
 
 .heard{
     position: fixed;
-    bottom: 120px;
+    bottom: 200px;
     font-size:1.5em;
     display: flex;
     justify-content: center;
@@ -150,7 +150,7 @@
 
 .listeningcontainer{
     position:fixed;
-    bottom: 0;
+    bottom: 80px;
     width: 100vw; 
     height: 240px; 
     display:flex;
@@ -165,7 +165,7 @@
 
 .helpcontainer{
     position:fixed;
-    bottom: 0;
+    bottom: 0px;
     width: 100vw; 
     height: 80px; 
     display:flex;
@@ -197,7 +197,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    bottom: 10px;
+    bottom: 90px;
     margin:0px;
     height: 50px;
     width: 50px;

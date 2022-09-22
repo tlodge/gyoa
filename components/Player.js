@@ -22,6 +22,7 @@ function Player(props) {
     
     const {id:storyId} = props;
     const timer = useRef(null);
+    const pingRef = useRef(null);
     const _muted = useRef(null);
     const _listening = useRef(null);
     const logger = useRef(null);
@@ -71,8 +72,11 @@ function Player(props) {
     
 
     function playPing() {
-        const audio = new Audio("../../ping.mp3");
-        audio.play();
+        try{ 
+            pingRef.current.play();
+        }catch(err){
+            console.log(err);
+        }
     }
 
     const setLoud = (value)=>{
@@ -94,7 +98,6 @@ function Player(props) {
     }
 
     const setMuted = (value)=>{
-        
          _muted.current = value;
         _setMuted(value);
         log("muted", `${storyId} ${node.id} ${value}`);
@@ -248,6 +251,7 @@ function Player(props) {
                             setRemaining(Math.round((finished-passed) / 1000));
                             console.log("--->", Math.round((finished-passed) / 1000));
                             if (passed == finished){
+                                    playPing();
                                     nextNode(node.rules[key].toLowerCase());
                                     setAction();
                                     setPlaying(true);
@@ -811,6 +815,7 @@ function Player(props) {
             {renderHelpMenu()}
             {renderHelp()}
             {renderCredits()}
+            <audio src={"../../ping.mp3"}  ref={pingRef} style={{display:"none"}} />
         </div>
     )
 }
