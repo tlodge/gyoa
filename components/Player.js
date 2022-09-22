@@ -139,7 +139,6 @@ function Player(props) {
         }else{
             setMuted(true);
         }
-        setListening(true);
       }
     
     const setupstorage = ()=>{
@@ -176,10 +175,20 @@ function Player(props) {
        logger.current = new Logger(new Worker('worker.js')); 
        log("story loaded", storyId);
        
+       //parallelise this and see if can cache model!
        const start = async ()=>{
-            await setupstorage();
-            load(storyId);
-            await loadModel(); 
+
+            const fetchStories = ()=>{
+                return new Promise(async (resolve, reject)=>{
+                    await setupstorage()
+                    load(storyId);
+                    resolve();
+                });
+            }
+
+            Promise.all([fetchStories(), await loadModel()]).then(()=>{
+                console.log("model loaded, storage setup")
+            })
        }
 
        start();
@@ -857,8 +866,14 @@ function Player(props) {
           </Modal.Header>
           <Modal.Body className={styles.credits}>
             
-                <Text b size={16}>Writer <Text size={16}>Matt Beames</Text></Text>
-    
+                <Text b size={16}>Writer and Story Development <Text size={16}>Matt Beames</Text></Text>
+                <Text b size={16}>Story Ideas and Sound Effects <Text size={16}>Year 5, Middleton Primary School</Text></Text>
+                <Text b size={16}>Voice Artists <Text size={16}>Hayley Thornton, Stuart Reid</Text></Text>
+                <Text b size={16}>Creative Producer <Text size={16}>Sarah West Valstar</Text></Text>
+                <Text b size={16}>Software Development <Text size={16}>Tom Lodge</Text></Text>
+                <Text b size={16}>Recording and Mixing <Text size={16}>Daniel Swann</Text></Text>
+                <Text b size={16}>Executive Producer <Text size={16}>Chris Greenhalgh</Text></Text>
+               
           </Modal.Body>
       </Modal>
     }
@@ -876,7 +891,7 @@ function Player(props) {
           </Text>
           </Modal.Header>
           <Modal.Body className={styles.credits}>
-                <Text size={16}>First of all.  Apologies!  This is a prototype app and will inevitably not work quite as smoothly as we would like. Here is a list of potential problems.  However before you spend too much time fiddling with settings, if possible, it might be worth trying a different device or browser (Chrome/Safari?) first, to see if the problem goes away.</Text>
+                <Text size={16}>First of all.  Apologies!  This is a prototype app and will inevitably not work quite as smoothly as we would like. Here is a list of potential problems.  However before you spend too much time fiddling with settings, if possible, it might be worth trying a different device or browser (Chrome?) first, to see if the problem goes away.</Text>
                 <Text b size={16}>It does not hear me!</Text>
                 <Text size={16}> First, check that the app prompted you to use your microphone. If it did and you accepted you should see a little microphone icon in your browser address bar.  If not, it may be that the microphone is not supported on your device.</Text>
                 <Text size={16}>We have found that voice recognition is better on some devices than on others.  Can you try it on another device or phone?</Text>

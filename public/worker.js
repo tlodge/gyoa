@@ -7,7 +7,7 @@ onmessage = (e) => {
     console.log('Message received from main script');
     try{
         const [id, type, data] = e.data;
-        const payload = JSON.stringify({id,type,data})
+        const payload = JSON.stringify({bts:Date.now(),id,type,data})
         
 
         var xmlhttp = new XMLHttpRequest();   // new HttpRequest instance 
