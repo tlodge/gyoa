@@ -725,7 +725,7 @@ function Player(props) {
     }
 
     const renderWaypoints = ()=>{
-        if (listening){
+        if (listening || !startpressed){
             return;
         }
         const items = waypoints.map(w=>{
@@ -873,6 +873,8 @@ function Player(props) {
                 <Text b size={16}>Software Development <Text size={16}>Tom Lodge</Text></Text>
                 <Text b size={16}>Recording and Mixing <Text size={16}>Daniel Swann</Text></Text>
                 <Text b size={16}>Executive Producer <Text size={16}>Chris Greenhalgh</Text></Text>
+                <Text b size={16}>timebeing by airtone <Text size={16}> &copy; Copyright 2021 Licensed under a Creative Commons Attribution Noncommercial  (3.0) license.</Text></Text>
+                <Text size={16}><a href="http://dig.ccmixter.org/files/airtone/63895">http://dig.ccmixter.org/files/airtone/63895</a></Text>
                
           </Modal.Body>
       </Modal>
